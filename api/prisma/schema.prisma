@@ -1,0 +1,252 @@
+// Schéma de la base du CETIC de Mezessé.
+// Les règles de gestion qui justifient chaque contrainte sont dans docs/REGLES-DE-GESTION.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  PROVISEUR
+  SURVEILLANT_GENERAL
+  PROFESSEUR
+}
+
+enum Sexe {
+  M
+  F
+}
+
+enum StatutInscription {
+  ACTIF
+  RENVOYE
+}
+
+enum TypeBareme {
+  GRADE
+  COTE
+}
+
+model Utilisateur {
+  id                    String   @id @default(cuid())
+  nom                   String
+  prenom                String
+  telephone             String?  @unique
+  email                 String?  @unique
+  motDePasse            String
+  role                  Role
+  actif                 Boolean  @default(true)
+  doitChangerMotDePasse Boolean  @default(false)
+  discipline            String? // ce qu'enseigne le professeur, à titre indicatif
+  creeLe                DateTime @default(now())
+  majLe                 DateTime @updatedAt
+
+  matieres           Matiere[]
+  classesPrincipales Classe[]  @relation("ProfPrincipal")
+  notesSaisies       Note[]
+  renvois            Renvoi[]  @relation("RenvoiPar")
+  reintegrations     Renvoi[]  @relation("ReintegrationPar")
+}
+
+// Une seule ligne (id = 1) : ce qui s'imprime en tête des bulletins et des listes.
+model Etablissement {
+  id               Int     @id @default(1)
+  nomFr            String
+  nomEn            String
+  sigle            String
+  regionFr         String
+  regionEn         String
+  departementFr    String
+  departementEn    String
+  arrondissement   String
+  localite         String
+  code             String
+  boitePostale     String?
+  telephone        String?
+  prefixeMatricule String  @default("CTM")
+}
+
+model AnneeScolaire {
+  id      String   @id @default(cuid())
+  libelle String   @unique // « 2026-2027 »
+  active  Boolean  @default(false)
+  creeLe  DateTime @default(now())
+
+  sequences    Sequence[]
+  classes      Classe[]
+  groupes      GroupeMatiere[]
+  inscriptions Inscription[]
+}
+
+model Sequence {
+  id            String  @id @default(cuid())
+  anneeId       String
+  numero        Int // 1 à 6
+  trimestre     Int // 1 à 3
+  saisieOuverte Boolean @default(false)
+
+  annee       AnneeScolaire     @relation(fields: [anneeId], references: [id], onDelete: Cascade)
+  notes       Note[]
+  competences CompetenceVisee[]
+
+  @@unique([anneeId, numero])
+}
+
+model Classe {
+  id              String  @id @default(cuid())
+  anneeId         String
+  nom             String // « 2e année ELEC »
+  nomEn           String?
+  niveau          Int // 1 à 4
+  specialite      String?
+  profPrincipalId String?
+
+  annee         AnneeScolaire   @relation(fields: [anneeId], references: [id], onDelete: Cascade)
+  profPrincipal Utilisateur?    @relation("ProfPrincipal", fields: [profPrincipalId], references: [id], onDelete: SetNull)
+  groupes       GroupeMatiere[]
+  matieres      Matiere[]
+  inscriptions  Inscription[]
+
+  @@unique([anneeId, nom])
+}
+
+// Un groupe peut servir à plusieurs classes de la même année (relation n-n implicite).
+model GroupeMatiere {
+  id      String @id @default(cuid())
+  anneeId String
+  nom     String
+  nomEn   String?
+  ordre   Int    @default(1)
+
+  annee    AnneeScolaire @relation(fields: [anneeId], references: [id], onDelete: Cascade)
+  classes  Classe[]
+  matieres Matiere[]
+
+  @@unique([anneeId, nom])
+}
+
+model Matiere {
+  id           String  @id @default(cuid())
+  classeId     String
+  groupeId     String
+  nom          String
+  nomEn        String?
+  coefficient  Int
+  ordre        Int     @default(1)
+  professeurId String?
+
+  classe      Classe            @relation(fields: [classeId], references: [id], onDelete: Cascade)
+  groupe      GroupeMatiere     @relation(fields: [groupeId], references: [id], onDelete: Restrict)
+  professeur  Utilisateur?      @relation(fields: [professeurId], references: [id], onDelete: SetNull)
+  notes       Note[]
+  competences CompetenceVisee[]
+
+  @@unique([classeId, nom])
+}
+
+model Eleve {
+  id                String   @id @default(cuid())
+  matricule         String   @unique // généré par l'application
+  matriculeNational String?  @unique // recopié depuis cartescolaire.cm
+  nom               String
+  prenoms           String
+  sexe              Sexe
+  dateNaissance     DateTime @db.Date
+  lieuNaissance     String
+  photoCle          String?
+  parentNom         String?
+  parentTelephone   String?
+  parentAdresse     String?
+  creeLe            DateTime @default(now())
+  majLe             DateTime @updatedAt
+
+  inscriptions Inscription[]
+}
+
+// L'élève dans une classe pour une année. Le renvoi porte sur l'inscription :
+// un élève renvoyé une année peut être réinscrit l'année suivante.
+model Inscription {
+  id         String            @id @default(cuid())
+  eleveId    String
+  anneeId    String
+  classeId   String
+  redoublant Boolean           @default(false)
+  statut     StatutInscription @default(ACTIF)
+  creeLe     DateTime          @default(now())
+
+  eleve   Eleve         @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  annee   AnneeScolaire @relation(fields: [anneeId], references: [id], onDelete: Cascade)
+  classe  Classe        @relation(fields: [classeId], references: [id], onDelete: Restrict)
+  notes   Note[]
+  renvois Renvoi[]
+
+  @@unique([eleveId, anneeId])
+  @@index([classeId, statut])
+}
+
+model Renvoi {
+  id                 String    @id @default(cuid())
+  inscriptionId      String
+  date               DateTime  @db.Date
+  motif              String
+  parId              String
+  creeLe             DateTime  @default(now())
+  reintegreLe        DateTime?
+  reintegreParId     String?
+  motifReintegration String?
+
+  inscription  Inscription  @relation(fields: [inscriptionId], references: [id], onDelete: Cascade)
+  par          Utilisateur  @relation("RenvoiPar", fields: [parId], references: [id])
+  reintegrePar Utilisateur? @relation("ReintegrationPar", fields: [reintegreParId], references: [id])
+}
+
+model Note {
+  id            String   @id @default(cuid())
+  inscriptionId String
+  matiereId     String
+  sequenceId    String
+  valeur        Decimal  @db.Decimal(4, 2)
+  saisieParId   String
+  majLe         DateTime @updatedAt
+
+  inscription Inscription @relation(fields: [inscriptionId], references: [id], onDelete: Cascade)
+  matiere     Matiere     @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+  sequence    Sequence    @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  saisiePar   Utilisateur @relation(fields: [saisieParId], references: [id])
+
+  @@unique([inscriptionId, matiereId, sequenceId])
+  @@index([matiereId, sequenceId])
+}
+
+// Compétence visée, saisie par le professeur pour sa matière à chaque séquence.
+model CompetenceVisee {
+  matiereId  String
+  sequenceId String
+  texte      String
+
+  matiere  Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+  sequence Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@id([matiereId, sequenceId])
+}
+
+// Barèmes modifiables par le SG : une ligne = une mention et sa borne basse (incluse).
+model Bareme {
+  id          String     @id @default(cuid())
+  type        TypeBareme
+  libelle     String
+  libelleLong String?
+  min         Decimal    @db.Decimal(4, 2)
+
+  @@unique([type, libelle])
+}
+
+model Compteur {
+  cle    String @id
+  valeur Int    @default(0)
+}

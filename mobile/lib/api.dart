@@ -1,0 +1,150 @@
+// Accès à l'API. Chaque lecture réussie est gardée sur le téléphone : sans réseau,
+// l'application affiche la dernière version connue au lieu d'une erreur.
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class ErreurApi implements Exception {
+  ErreurApi(this.statut, this.message, {this.horsLigne = false});
+  final int statut;
+  final String message;
+  final bool horsLigne;
+  @override
+  String toString() => message;
+}
+
+class Api {
+  Api._();
+  static final Api i = Api._();
+
+  static const base = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'https://cetic-mezesse-api.azurewebsites.net/api',
+  );
+
+  String? jeton;
+  String? anneeId;
+  late SharedPreferences prefs;
+
+  /// Vrai quand la dernière requête n'a pas pu joindre le serveur.
+  final ValueNotifier<bool> horsLigne = ValueNotifier(false);
+
+  /// Appelé quand le serveur refuse la session (jeton expiré ou compte désactivé).
+  VoidCallback? surSessionExpiree;
+
+  /// Appelé après chaque requête réussie : sert à vider la file d'attente des notes.
+  VoidCallback? surRetourReseau;
+
+  Future<void> initialiser() async {
+    prefs = await SharedPreferences.getInstance();
+    jeton = prefs.getString('jeton');
+    anneeId = prefs.getString('annee');
+  }
+
+  Uri _uri(String chemin, {bool annee = true}) {
+    final u = Uri.parse('$base$chemin');
+    if (!annee || anneeId == null || u.queryParameters.containsKey('anneeId')) return u;
+    return u.replace(queryParameters: {...u.queryParameters, 'anneeId': anneeId!});
+  }
+
+  Map<String, String> _entetes({bool json = false}) => {
+        if (json) 'Content-Type': 'application/json',
+        if (jeton != null) 'Authorization': 'Bearer $jeton',
+      };
+
+  void _reseauOk() {
+    final etaitHorsLigne = horsLigne.value;
+    horsLigne.value = false;
+    if (etaitHorsLigne) surRetourReseau?.call();
+  }
+
+  Future<http.Response> _executer(Future<http.Response> Function() requete) async {
+    http.Response r;
+    try {
+      r = await requete().timeout(const Duration(seconds: 25));
+    } on SocketException {
+      horsLigne.value = true;
+      throw ErreurApi(0, 'Pas de connexion au serveur.', horsLigne: true);
+    } on TimeoutException {
+      horsLigne.value = true;
+      throw ErreurApi(0, 'Le serveur ne répond pas.', horsLigne: true);
+    } on http.ClientException {
+      horsLigne.value = true;
+      throw ErreurApi(0, 'Pas de connexion au serveur.', horsLigne: true);
+    }
+    _reseauOk();
+    if (r.statusCode == 401 && jeton != null) surSessionExpiree?.call();
+    if (r.statusCode >= 400) {
+      var message = 'Erreur ${r.statusCode}';
+      try {
+        final j = jsonDecode(utf8.decode(r.bodyBytes));
+        if (j is Map && j['message'] is String) message = j['message'] as String;
+      } catch (_) {}
+      throw ErreurApi(r.statusCode, message);
+    }
+    return r;
+  }
+
+  /// Lecture avec repli sur la copie locale en cas d'absence de réseau.
+  Future<dynamic> get(String chemin, {bool annee = true}) async {
+    final uri = _uri(chemin, annee: annee);
+    final cle = 'cache:$uri';
+    try {
+      final r = await _executer(() => http.get(uri, headers: _entetes()));
+      final texte = utf8.decode(r.bodyBytes);
+      unawaited(prefs.setString(cle, texte));
+      return jsonDecode(texte);
+    } on ErreurApi catch (e) {
+      final copie = prefs.getString(cle);
+      if (e.horsLigne && copie != null) return jsonDecode(copie);
+      rethrow;
+    }
+  }
+
+  Future<dynamic> envoyer(String methode, String chemin, {Object? corps, bool annee = true}) async {
+    final uri = _uri(chemin, annee: annee);
+    final req = http.Request(methode, uri)..headers.addAll(_entetes(json: corps != null));
+    if (corps != null) req.body = jsonEncode(corps);
+    final r = await _executer(() async => http.Response.fromStream(await req.send()));
+    if (r.statusCode == 204 || r.bodyBytes.isEmpty) return null;
+    return jsonDecode(utf8.decode(r.bodyBytes));
+  }
+
+  Future<dynamic> post(String chemin, [Object? corps]) => envoyer('POST', chemin, corps: corps ?? {});
+  Future<dynamic> put(String chemin, Object corps) => envoyer('PUT', chemin, corps: corps);
+  Future<dynamic> patch(String chemin, Object corps) => envoyer('PATCH', chemin, corps: corps);
+  Future<dynamic> delete(String chemin) => envoyer('DELETE', chemin);
+
+  Future<dynamic> televerser(String chemin, String champ, File fichier, {Map<String, String> champs = const {}}) async {
+    final req = http.MultipartRequest('POST', _uri(chemin))
+      ..headers.addAll(_entetes())
+      ..fields.addAll(champs)
+      ..files.add(await http.MultipartFile.fromPath(champ, fichier.path));
+    final r = await _executer(() async => http.Response.fromStream(await req.send()));
+    return jsonDecode(utf8.decode(r.bodyBytes));
+  }
+
+  /// Télécharge un document (PDF, Excel) et l'ouvre avec l'application du téléphone.
+  Future<void> ouvrirDocument(String chemin, {String methode = 'GET', Object? corps}) async {
+    final req = http.Request(methode, _uri(chemin))..headers.addAll(_entetes(json: corps != null));
+    if (corps != null) req.body = jsonEncode(corps);
+    final r = await _executer(() async => http.Response.fromStream(await req.send()));
+    final nom = RegExp(r'filename="([^"]+)"').firstMatch(r.headers['content-disposition'] ?? '')?.group(1) ?? 'document';
+    final dossier = await getTemporaryDirectory();
+    final f = File('${dossier.path}/$nom');
+    await f.writeAsBytes(r.bodyBytes);
+    final ouverture = await OpenFilex.open(f.path);
+    if (ouverture.type != ResultType.done) {
+      throw ErreurApi(0, 'Aucune application pour ouvrir ${nom.split('.').last.toUpperCase()} : ${ouverture.message}');
+    }
+  }
+
+  String urlPhoto(String eleveId, String? version) =>
+      '${_uri('/eleves/$eleveId/photo', annee: false)}?jeton=$jeton&v=${version ?? ''}';
+}
