@@ -297,7 +297,7 @@ class _FicheEleveState extends State<FicheEleve> {
             ),
             if (actuelle != null && actuelle['statut'] == 'ACTIF')
               Carte(
-                titre: 'Bulletin',
+                titre: 'Documents',
                 enfant: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   ChoixPeriode(valeur: _periode, changer: (v) => setState(() => _periode = v)),
                   const SizedBox(height: 10),
@@ -311,6 +311,20 @@ class _FicheEleveState extends State<FicheEleve> {
                         'inscriptionIds': [actuelle!['id']]
                       }),
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  // La photo est obligatoire sur la carte scolaire (RG-31).
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.credit_card),
+                    label: Text(e['photoCle'] == null ? 'Carte scolaire : ajoutez d’abord la photo' : 'Carte scolaire'),
+                    onPressed: e['photoCle'] == null
+                        ? null
+                        : () => agir(
+                              context,
+                              () => Api.i.ouvrirDocument('/documents/cartes', methode: 'POST', corps: {
+                                'inscriptionIds': [actuelle!['id']]
+                              }),
+                            ),
                   ),
                 ]),
               ),

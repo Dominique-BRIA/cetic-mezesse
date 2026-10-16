@@ -15,6 +15,9 @@ import { eleves } from './routes/eleves';
 import { notes } from './routes/notes';
 import { statistiques } from './routes/statistiques';
 import { documents } from './routes/documents';
+import { specialites } from './routes/specialites';
+import { decisions } from './routes/decisions';
+import { notifications } from './routes/notifications';
 
 export function creerApp() {
   const app = express();
@@ -39,6 +42,7 @@ export function creerApp() {
   api.use('/baremes', baremes);
   api.use('/annees', annees);
   api.use('/classes', classes);
+  api.use('/specialites', specialites);
   api.use('/groupes', groupes);
   api.use('/matieres', matieres);
   api.use('/utilisateurs', utilisateurs);
@@ -46,6 +50,8 @@ export function creerApp() {
   api.use('/notes', notes);
   api.use('/statistiques', statistiques);
   api.use('/documents', documents);
+  api.use('/decisions', decisions);
+  api.use('/notifications', notifications);
   app.use('/api', api);
 
   app.use(routeInconnue);

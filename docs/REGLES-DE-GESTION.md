@@ -10,7 +10,7 @@ Validées avec le commanditaire le 16/10/2026. Le code y renvoie par leur numér
 | RG-04 | Une session dure 12 heures ; un compte désactivé perd l'accès immédiatement. |
 | RG-05 | Une année scolaire compte six séquences, deux par trimestre. Une seule année est active. |
 | RG-06 | Une nouvelle année peut reprendre l'organisation d'une autre : groupes, classes, matières, coefficients, professeurs. |
-| RG-07 | Une classe appartient à une année ; son nom est unique dans l'année. |
+| RG-07 | Une classe appartient à une année ; son nom est unique dans l'année. Une classe sans élève peut être supprimée. |
 | RG-08 | Un groupe de matières appartient à une année et peut être rattaché à plusieurs classes. |
 | RG-09 | Une matière appartient à une classe et à un groupe rattaché à cette classe ; coefficient entier de 1 à 20 ; au plus un professeur. |
 | RG-10 | Supprimer une matière qui a des notes exige une confirmation et efface ses notes ; une matière notée ne change plus de classe. |
@@ -32,3 +32,7 @@ Validées avec le commanditaire le 16/10/2026. Le code y renvoie par leur numér
 | RG-26 | Bulletin bilingue, une page A4 par élève ; bloc discipline et emplacement du cachet laissés vides. |
 | RG-27 | Le classement général range tous les élèves de l'établissement ensemble. |
 | RG-28 | Sur mobile, les notes saisies sans réseau sont gardées puis envoyées automatiquement ; un refus du serveur est signalé et la note n'est pas perdue. |
+| RG-29 | Le SG crée les spécialités (« Mécanique »), communes à toutes les années. Le nom d'une classe est calculé : niveau + spécialité + lettre A, B… dans l'ordre de création, la lettre n'apparaissant que si le niveau et la spécialité comptent plusieurs classes dans l'année (« 1re année Mécanique A »). |
+| RG-30 | Chaque décision du SG sur l'organisation, la scolarité ou l'administration est consignée et approuvée d'office. Le Proviseur, seul à consulter ce journal, peut la désapprouver pendant 4 semaines (motif obligatoire) ; passé ce délai, elle reste approuvée. Désapprouver défait l'action (classe créée supprimée, valeurs précédentes remises, élément supprimé recréé) et c'est définitif ; si l'action ne peut plus être défaite (élèves inscrits, notes saisies depuis), la désapprobation est refusée avec la raison. |
+| RG-31 | Carte d'identité scolaire au format ID-1 (85,6 × 54 mm), dix par page A4 avec traits de coupe, pour des classes entières ou des élèves choisis. La photo est obligatoire : la sélection est vérifiée avant l'impression et les élèves sans photo sont écartés. |
+| RG-32 | Notifications dans l'application : le SG est prévenu quand le Proviseur désapprouve une de ses décisions (motif et action défaite) ; les professeurs actifs qui ont une matière dans l'année sont prévenus quand une séquence est ouverte à la saisie. |

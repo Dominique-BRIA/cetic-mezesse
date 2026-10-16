@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft, Camera, FileText, Loader2, Pencil, UserMinus, UserPlus } from 'lucide-react';
+import { ArrowLeft, Camera, FileText, IdCard, Loader2, Pencil, UserMinus, UserPlus } from 'lucide-react';
 import { api, telecharger, urlProtegee } from '../../lib/api';
 import { useApp } from '../../lib/contexte';
 import { date, PERIODES } from '../../lib/format';
@@ -136,6 +136,19 @@ export default function FicheEleve() {
                   }
                 >
                   <FileText className="h-4 w-4" /> Générer le bulletin
+                </button>
+                <button
+                  type="button"
+                  className="bouton-secondaire"
+                  disabled={!e.photoCle}
+                  title={e.photoCle ? undefined : 'Ajoutez d’abord la photo : elle est obligatoire sur la carte.'}
+                  onClick={() =>
+                    telecharger('/documents/cartes', { methode: 'POST', corps: { inscriptionIds: [actuelle.id] }, ouvrir: true }).catch((err) =>
+                      toast.error(err.message),
+                    )
+                  }
+                >
+                  <IdCard className="h-4 w-4" /> Carte scolaire
                 </button>
               </div>
             </Carte>

@@ -32,6 +32,17 @@ enum TypeBareme {
   COTE
 }
 
+enum DomaineDecision {
+  ORGANISATION
+  SCOLARITE
+  ADMINISTRATION
+}
+
+enum StatutDecision {
+  APPROUVEE
+  DESAPPROUVEE
+}
+
 model Utilisateur {
   id                    String   @id @default(cuid())
   nom                   String
@@ -47,10 +58,13 @@ model Utilisateur {
   majLe                 DateTime @updatedAt
 
   matieres           Matiere[]
-  classesPrincipales Classe[]  @relation("ProfPrincipal")
+  classesPrincipales Classe[]       @relation("ProfPrincipal")
   notesSaisies       Note[]
-  renvois            Renvoi[]  @relation("RenvoiPar")
-  reintegrations     Renvoi[]  @relation("ReintegrationPar")
+  renvois            Renvoi[]       @relation("RenvoiPar")
+  reintegrations     Renvoi[]       @relation("ReintegrationPar")
+  decisions          Decision[]     @relation("DecisionAuteur")
+  desapprobations    Decision[]     @relation("DecisionDesapprobation")
+  notifications      Notification[]
 }
 
 // Une seule ligne (id = 1) : ce qui s'imprime en tête des bulletins et des listes.
@@ -97,31 +111,46 @@ model Sequence {
   @@unique([anneeId, numero])
 }
 
+// Spécialité créée par le SG (« Mécanique », « Électricité ») ; elle sert d'une année sur l'autre.
+model Specialite {
+  id     String   @id @default(cuid())
+  nom    String   @unique
+  nomEn  String?
+  creeLe DateTime @default(now())
+
+  classes Classe[]
+}
+
+// Le nom est calculé (RG-29) : niveau + spécialité + lettre A, B… quand le niveau et la
+// spécialité comptent plusieurs classes dans l'année. Il est stocké pour les listes et les PDF.
 model Classe {
   id              String  @id @default(cuid())
   anneeId         String
-  nom             String // « 2e année ELEC »
+  nom             String // « 1re année Mécanique A »
   nomEn           String?
-  niveau          Int // 1 à 4
-  specialite      String?
+  niveau          Int // 1 à 7
+  specialiteId    String?
+  numero          Int     @default(1) // ordre dans le niveau et la spécialité : donne la lettre
   profPrincipalId String?
 
   annee         AnneeScolaire   @relation(fields: [anneeId], references: [id], onDelete: Cascade)
+  specialite    Specialite?     @relation(fields: [specialiteId], references: [id], onDelete: Restrict)
   profPrincipal Utilisateur?    @relation("ProfPrincipal", fields: [profPrincipalId], references: [id], onDelete: SetNull)
   groupes       GroupeMatiere[]
   matieres      Matiere[]
   inscriptions  Inscription[]
 
   @@unique([anneeId, nom])
+  @@index([anneeId, niveau, specialiteId])
 }
 
 // Un groupe peut servir à plusieurs classes de la même année (relation n-n implicite).
 model GroupeMatiere {
-  id      String @id @default(cuid())
+  id      String  @id @default(cuid())
   anneeId String
   nom     String
   nomEn   String?
-  ordre   Int    @default(1)
+  ordre   Int     @default(1)
 
   annee    AnneeScolaire @relation(fields: [anneeId], references: [id], onDelete: Cascade)
   classes  Classe[]
@@ -249,4 +278,44 @@ model Bareme {
 model Compteur {
   cle    String @id
   valeur Int    @default(0)
+}
+
+// Journal des décisions du SG (RG-30) : approuvées d'office, le Proviseur peut en désapprouver
+// une pendant 4 semaines ; passé ce délai, elle reste approuvée.
+model Decision {
+  id                  String          @id @default(cuid())
+  domaine             DomaineDecision
+  action              String // « classe.creer », « eleve.modifier »…
+  libelle             String
+  lien                String? // page de l'application où voir l'objet
+  auteurId            String
+  creeLe              DateTime        @default(now())
+  statut              StatutDecision  @default(APPROUVEE)
+  desapprouveeLe      DateTime?
+  desapprouveeParId   String?
+  motifDesapprobation String?
+  annulation          Json? // de quoi défaire l'action si le Proviseur la désapprouve
+  annulee             Boolean         @default(false) // l'action a été défaite à la désapprobation
+
+  auteur          Utilisateur  @relation("DecisionAuteur", fields: [auteurId], references: [id])
+  desapprouveePar Utilisateur? @relation("DecisionDesapprobation", fields: [desapprouveeParId], references: [id])
+
+  @@index([creeLe])
+  @@index([domaine, creeLe])
+}
+
+// Notification affichée dans l'application (RG-32) : décision du SG désapprouvée,
+// séquence ouverte à la saisie pour les professeurs concernés.
+model Notification {
+  id             String   @id @default(cuid())
+  destinataireId String
+  titre          String
+  message        String
+  lien           String? // page à ouvrir
+  lue            Boolean  @default(false)
+  creeLe         DateTime @default(now())
+
+  destinataire Utilisateur @relation(fields: [destinataireId], references: [id], onDelete: Cascade)
+
+  @@index([destinataireId, lue, creeLe])
 }

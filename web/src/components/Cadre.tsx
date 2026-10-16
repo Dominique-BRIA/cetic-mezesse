@@ -7,6 +7,7 @@ import {
   CalendarRange,
   ClipboardList,
   FileText,
+  Gavel,
   KeyRound,
   Layers,
   LayoutDashboard,
@@ -22,6 +23,7 @@ import {
   UserPlus,
   Users,
   GraduationCap,
+  IdCard,
   School,
   X,
 } from 'lucide-react';
@@ -30,6 +32,7 @@ import { ROLES } from '../lib/format';
 import type { Role } from '../lib/types';
 import { MotifFond } from './MotifFond';
 import { Marque } from './Marque';
+import { Cloche } from './Notifications';
 
 interface Lien {
   vers: string;
@@ -59,6 +62,7 @@ const SECTIONS: { titre: string | null; liens: Lien[] }[] = [
     titre: 'Scolarité',
     liens: [
       { vers: '/eleves', libelle: 'Élèves', icone: Users, roles: [P, SG] },
+      { vers: '/cartes', libelle: 'Cartes scolaires', icone: IdCard, roles: [P, SG] },
       { vers: '/renvoyes', libelle: 'Élèves renvoyés', icone: UserMinus, roles: [P, SG] },
       { vers: '/reinscription', libelle: 'Réinscriptions', icone: UserPlus, roles: [SG] },
     ],
@@ -76,7 +80,7 @@ const SECTIONS: { titre: string | null; liens: Lien[] }[] = [
     titre: 'Évaluations',
     liens: [
       { vers: '/notes', libelle: 'Notes', icone: ClipboardList, roles: [P, SG] },
-      { vers: '/bulletins', libelle: 'Bulletins et listes', icone: FileText, roles: [P, SG] },
+      { vers: '/bulletins', libelle: 'Bulletins', icone: FileText, roles: [P, SG] },
       { vers: '/statistiques', libelle: 'Statistiques', icone: BarChart3, roles: [P, SG] },
       { vers: '/classement', libelle: 'Classement général', icone: Trophy, roles: [P, SG] },
     ],
@@ -84,6 +88,7 @@ const SECTIONS: { titre: string | null; liens: Lien[] }[] = [
   {
     titre: 'Administration',
     liens: [
+      { vers: '/decisions', libelle: 'Décisions prises', icone: Gavel, roles: [P] },
       { vers: '/annees', libelle: 'Années et séquences', icone: CalendarRange, roles: [P, SG] },
       { vers: '/parametres', libelle: 'Paramètres', icone: Settings, roles: [SG] },
     ],
@@ -106,6 +111,9 @@ export function Cadre() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-4 pb-3 pt-4">
         <Marque />
+        <div className="-mr-2 hidden lg:block">
+          <Cloche />
+        </div>
         <button type="button" className="bouton-discret lg:hidden" onClick={() => setMenuOuvert(false)} aria-label="Fermer le menu">
           <X className="h-5 w-5" />
         </button>
@@ -201,6 +209,7 @@ export function Cadre() {
           </button>
           <Marque compacte />
           <span className="ml-auto text-xs text-encre-2">{annee?.libelle}</span>
+          <Cloche />
         </div>
         <main className="px-3 py-4 sm:px-6 sm:py-7">
           <div className="mx-auto max-w-[1240px] rounded-lg border border-bord bg-surface px-4 py-5 shadow-feuille sm:px-7 sm:py-6">

@@ -15,6 +15,7 @@ const Eleves = lazy(() => import('./pages/eleves/Eleves'));
 const FicheEleve = lazy(() => import('./pages/eleves/FicheEleve'));
 const Renvoyes = lazy(() => import('./pages/eleves/Renvoyes'));
 const Reinscription = lazy(() => import('./pages/eleves/Reinscription'));
+const Cartes = lazy(() => import('./pages/eleves/Cartes'));
 const Classes = lazy(() => import('./pages/organisation/Classes'));
 const Groupes = lazy(() => import('./pages/organisation/Groupes'));
 const Matieres = lazy(() => import('./pages/organisation/Matieres'));
@@ -25,6 +26,7 @@ const Statistiques = lazy(() => import('./pages/evaluations/Statistiques'));
 const Classement = lazy(() => import('./pages/evaluations/Classement'));
 const Annees = lazy(() => import('./pages/admin/Annees'));
 const Parametres = lazy(() => import('./pages/admin/Parametres'));
+const Decisions = lazy(() => import('./pages/admin/Decisions'));
 
 const P: Role = 'PROVISEUR';
 const SG: Role = 'SURVEILLANT_GENERAL';
@@ -55,6 +57,7 @@ export function App() {
           <Route path="eleves/:id" element={r([P, SG], <FicheEleve />)} />
           <Route path="renvoyes" element={r([P, SG], <Renvoyes />)} />
           <Route path="reinscription" element={r([SG], <Reinscription />)} />
+          <Route path="cartes" element={r([P, SG], <Cartes />)} />
           <Route path="classes" element={r([P, SG], <Classes />)} />
           <Route path="groupes" element={r([P, SG], <Groupes />)} />
           <Route path="matieres" element={r([P, SG], <Matieres />)} />
@@ -65,6 +68,7 @@ export function App() {
           <Route path="classement" element={r([P, SG], <Classement />)} />
           <Route path="annees" element={r([P, SG], <Annees />)} />
           <Route path="parametres" element={r([SG], <Parametres />)} />
+          <Route path="decisions" element={r([P], <Decisions />)} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

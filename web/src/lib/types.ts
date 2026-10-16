@@ -41,11 +41,48 @@ export interface Classe {
   nom: string;
   nomEn: string | null;
   niveau: number;
-  specialite: string | null;
+  numero: number;
+  specialiteId: string | null;
+  specialite: { id: string; nom: string; nomEn: string | null } | null;
   profPrincipalId: string | null;
   profPrincipal: Personne | null;
   groupes: { id: string; nom: string }[];
   _count: { matieres: number; inscriptions: number };
+}
+
+export interface Specialite {
+  id: string;
+  nom: string;
+  nomEn: string | null;
+  _count: { classes: number };
+}
+
+export type DomaineDecision = 'ORGANISATION' | 'SCOLARITE' | 'ADMINISTRATION';
+
+export interface Decision {
+  id: string;
+  domaine: DomaineDecision;
+  action: string;
+  libelle: string;
+  lien: string | null;
+  creeLe: string;
+  statut: 'APPROUVEE' | 'DESAPPROUVEE';
+  desapprouveeLe: string | null;
+  motifDesapprobation: string | null;
+  annulee: boolean;
+  effetPrevu: string | null; // ce que la désapprobation défera
+  effet: string | null; // ce qu'elle a défait
+  auteur: Personne;
+  desapprouveePar: Personne | null;
+  limite: string;
+  modifiable: boolean;
+}
+
+export interface PageDecisions {
+  decisions: Decision[];
+  suivant: string | null;
+  totaux: { enDelai: number; desapprouvees: number };
+  delaiJours: number;
 }
 
 export interface Groupe {

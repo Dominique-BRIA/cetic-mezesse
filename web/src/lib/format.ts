@@ -52,3 +52,9 @@ export function classeNote(v: number | null | undefined): string {
   if (v === null || v === undefined) return 'text-encre-3';
   return Math.round(v * 100) / 100 < 10 ? 'text-danger' : '';
 }
+
+// Même calcul que l'API (RG-29) : la lettre n'apparaît que s'il y a plusieurs classes.
+export function nomClasse(niveau: number, specialite: string | null | undefined, rang: number, nombre: number): string {
+  const lettre = nombre > 1 ? ` ${rang < 26 ? String.fromCharCode(65 + rang) : rang + 1}` : '';
+  return `${niveau === 1 ? '1re' : `${niveau}e`} année${specialite ? ` ${specialite}` : ''}${lettre}`;
+}

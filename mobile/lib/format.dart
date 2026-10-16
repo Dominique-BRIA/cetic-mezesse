@@ -53,3 +53,9 @@ String saisieNote(num? v) {
   final s = v.toStringAsFixed(2).replaceAll('.', ',');
   return s.endsWith(',00') ? s.substring(0, s.length - 3) : s;
 }
+
+/// Même calcul que l'API (RG-29) : la lettre n'apparaît que s'il y a plusieurs classes.
+String nomClasse(int niveau, String? specialite, int rang, int nombre) {
+  final lettre = nombre > 1 ? ' ${rang < 26 ? String.fromCharCode(65 + rang) : rang + 1}' : '';
+  return '${niveau == 1 ? '1re' : '${niveau}e'} année${specialite == null ? '' : ' $specialite'}$lettre';
+}

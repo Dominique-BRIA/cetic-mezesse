@@ -5,6 +5,7 @@ import { DIRECTION, roles } from '../lib/auth';
 import { anneeDe } from '../lib/annee';
 import { texte, texteOptionnel } from '../lib/validation';
 import { conflit } from '../lib/erreurs';
+import { consigner } from '../lib/decisions';
 
 export const groupes = Router();
 
@@ -28,12 +29,18 @@ const schema = z.object({
 groupes.post('/', roles('SURVEILLANT_GENERAL'), async (req, res) => {
   const { classeIds, ...data } = schema.parse(req.body);
   const anneeId = await anneeDe(req);
-  res.status(201).json(
-    await prisma.groupeMatiere.create({
-      data: { ...data, anneeId, classes: { connect: classeIds.map((id) => ({ id })) } },
-      include: inclure,
-    }),
-  );
+  const g = await prisma.groupeMatiere.create({
+    data: { ...data, anneeId, classes: { connect: classeIds.map((id) => ({ id })) } },
+    include: inclure,
+  });
+  await consigner(req, {
+    domaine: 'ORGANISATION',
+    action: 'groupe.creer',
+    libelle: `Création du groupe de matières ${g.nom} pour ${g.classes.map((c) => c.nom).join(', ')}`,
+    lien: '/groupes',
+    annulation: { id: g.id },
+  });
+  res.status(201).json(g);
 });
 
 groupes.put('/:id', roles('SURVEILLANT_GENERAL'), async (req, res) => {
@@ -50,13 +57,26 @@ groupes.put('/:id', roles('SURVEILLANT_GENERAL'), async (req, res) => {
       `Des matières de ${bloquantes.map((b) => b.classe.nom).join(', ')} sont dans ce groupe : changez-les de groupe d'abord.`,
     );
   }
-  res.json(
-    await prisma.groupeMatiere.update({
-      where: { id },
-      data: { ...data, classes: { set: classeIds.map((c) => ({ id: c })) } },
-      include: inclure,
-    }),
-  );
+  const avant = await prisma.groupeMatiere.findUniqueOrThrow({ where: { id }, include: { classes: { select: { id: true } } } });
+  const g = await prisma.groupeMatiere.update({
+    where: { id },
+    data: { ...data, classes: { set: classeIds.map((c) => ({ id: c })) } },
+    include: inclure,
+  });
+  await consigner(req, {
+    domaine: 'ORGANISATION',
+    action: 'groupe.modifier',
+    libelle: `Modification du groupe de matières ${avant.nom}${avant.nom !== g.nom ? ` (renommé ${g.nom})` : ''} : ${g.classes
+      .map((c) => c.nom)
+      .join(', ')}`,
+    lien: '/groupes',
+    annulation: {
+      id,
+      avant: { nom: avant.nom, nomEn: avant.nomEn, ordre: avant.ordre, classeIds: avant.classes.map((c) => c.id) },
+      apres: { nom: g.nom, nomEn: g.nomEn, ordre: g.ordre, classeIds: g.classes.map((c) => c.id) },
+    },
+  });
+  res.json(g);
 });
 
 groupes.delete('/:id', roles('SURVEILLANT_GENERAL'), async (req, res) => {
@@ -64,6 +84,13 @@ groupes.delete('/:id', roles('SURVEILLANT_GENERAL'), async (req, res) => {
   if (await prisma.matiere.count({ where: { groupeId: id } })) {
     throw conflit("Ce groupe contient des matières : déplacez-les ou supprimez-les d'abord.");
   }
-  await prisma.groupeMatiere.delete({ where: { id } });
+  const g = await prisma.groupeMatiere.delete({ where: { id }, include: { classes: { select: { id: true } } } });
+  await consigner(req, {
+    domaine: 'ORGANISATION',
+    action: 'groupe.supprimer',
+    libelle: `Suppression du groupe de matières ${g.nom}`,
+    lien: '/groupes',
+    annulation: { anneeId: g.anneeId, nom: g.nom, nomEn: g.nomEn, ordre: g.ordre, classeIds: g.classes.map((c) => c.id) },
+  });
   res.status(204).end();
 });

@@ -9,7 +9,8 @@ import { anneeDe } from '../lib/annee';
 import { texte, texteOptionnel } from '../lib/validation';
 import { conflit, introuvable, invalide } from '../lib/erreurs';
 import { nouveauMatricule } from '../lib/matricule';
-import { deposer, lire, supprimer } from '../lib/stockage';
+import { deposer, lire } from '../lib/stockage';
+import { consigner } from '../lib/decisions';
 
 export const eleves = Router();
 
@@ -26,6 +27,19 @@ const champsEleve = {
   parentTelephone: texteOptionnel(30),
   parentAdresse: texteOptionnel(200),
 };
+
+// Champs de la fiche qu'une désapprobation remet en l'état (services/annulation.ts).
+const fiche = (e: Prisma.EleveGetPayload<object>) => ({
+  matriculeNational: e.matriculeNational,
+  nom: e.nom,
+  prenoms: e.prenoms,
+  sexe: e.sexe,
+  dateNaissance: e.dateNaissance,
+  lieuNaissance: e.lieuNaissance,
+  parentNom: e.parentNom,
+  parentTelephone: e.parentTelephone,
+  parentAdresse: e.parentAdresse,
+});
 
 const inclureInscription = {
   classe: { select: { id: true, nom: true, niveau: true } },
@@ -109,11 +123,23 @@ eleves.post('/', roles(...DIRECTION), async (req, res) => {
     .parse(req.body);
   const anneeId = await anneeDe(req);
   const cree = await prisma.$transaction(async (tx) => {
-    const { annee, prefixe } = await contexte(tx, anneeId, classeId);
+    const { annee, prefixe, classe } = await contexte(tx, anneeId, classeId);
     const matricule = await nouveauMatricule(tx, prefixe, annee.libelle);
-    return tx.eleve.create({
+    const e = await tx.eleve.create({
       data: { ...data, matricule, inscriptions: { create: { anneeId, classeId, redoublant } } },
     });
+    await consigner(
+      req,
+      {
+        domaine: 'SCOLARITE',
+        action: 'eleve.inscrire',
+        annulation: { eleveId: e.id },
+        libelle: `Inscription de ${e.nom} ${e.prenoms} (${e.matricule}) en ${classe.nom}${redoublant ? ', redoublant' : ''}`,
+        lien: `/eleves/${e.id}`,
+      },
+      tx,
+    );
+    return e;
   });
   res.status(201).json(cree);
 });
@@ -122,7 +148,7 @@ async function contexte(tx: Prisma.TransactionClient, anneeId: string, classeId:
   const classe = await tx.classe.findUnique({ where: { id: classeId }, include: { annee: true } });
   if (!classe || classe.anneeId !== anneeId) throw invalide("Cette classe n'appartient pas à l'année choisie.");
   const etab = await tx.etablissement.findUnique({ where: { id: 1 } });
-  return { annee: classe.annee, prefixe: etab?.prefixeMatricule ?? 'CTM' };
+  return { annee: classe.annee, prefixe: etab?.prefixeMatricule ?? 'CTM', classe };
 }
 
 eleves.put('/:id', roles('SURVEILLANT_GENERAL'), async (req, res) => {
@@ -132,20 +158,49 @@ eleves.put('/:id', roles('SURVEILLANT_GENERAL'), async (req, res) => {
     .parse(req.body);
   const anneeId = await anneeDe(req);
   await prisma.$transaction(async (tx) => {
-    await tx.eleve.update({ where: { id }, data });
-    const ins = await tx.inscription.findUnique({ where: { eleveId_anneeId: { eleveId: id, anneeId } } });
+    const avantFiche = await tx.eleve.findUniqueOrThrow({ where: { id } });
+    const e = await tx.eleve.update({ where: { id }, data });
+    const ins = await tx.inscription.findUnique({
+      where: { eleveId_anneeId: { eleveId: id, anneeId } },
+      include: { classe: { select: { nom: true } } },
+    });
+    const changements: string[] = [];
     if (ins && (classeId !== undefined || redoublant !== undefined)) {
       if (classeId && classeId !== ins.classeId) {
         if (await tx.note.count({ where: { inscriptionId: ins.id } })) {
           throw conflit("L'élève a déjà des notes dans sa classe : le changement de classe n'est plus possible.");
         }
-        await contexte(tx, anneeId, classeId);
+        const { classe } = await contexte(tx, anneeId, classeId);
+        changements.push(`changement de classe : ${ins.classe.nom} → ${classe.nom}`);
+      }
+      if (redoublant !== undefined && redoublant !== ins.redoublant) {
+        changements.push(redoublant ? 'déclaré redoublant' : 'ne redouble plus');
       }
       await tx.inscription.update({
         where: { id: ins.id },
         data: { classeId: classeId ?? ins.classeId, redoublant: redoublant ?? ins.redoublant },
       });
     }
+    await consigner(
+      req,
+      {
+        domaine: 'SCOLARITE',
+        action: 'eleve.modifier',
+        annulation: {
+          eleveId: id,
+          inscriptionId: ins?.id ?? null,
+          avant: { ...fiche(avantFiche), classeId: ins?.classeId ?? null, redoublant: ins?.redoublant ?? null },
+          apres: {
+            ...fiche(e),
+            classeId: (classeId || ins?.classeId) ?? null,
+            redoublant: redoublant ?? ins?.redoublant ?? null,
+          },
+        },
+        libelle: `Modification de la fiche de ${e.nom} ${e.prenoms}${changements.length ? ` : ${changements.join(', ')}` : ''}`,
+        lien: `/eleves/${id}`,
+      },
+      tx,
+    );
   });
   res.json(await prisma.eleve.findUnique({ where: { id } }));
 });
@@ -160,7 +215,13 @@ eleves.post('/:id/photo', roles(...DIRECTION), televersement.single('photo'), as
   const cle = `eleves/${id}-${Date.now()}.${f.mimetype === 'image/png' ? 'png' : 'jpg'}`;
   await deposer(cle, f.buffer, f.mimetype);
   await prisma.eleve.update({ where: { id }, data: { photoCle: cle } });
-  if (e.photoCle) await supprimer(e.photoCle);
+  await consigner(req, {
+    domaine: 'SCOLARITE',
+    action: 'eleve.photo',
+    annulation: { eleveId: id, avantCle: e.photoCle, apresCle: cle },
+    libelle: `${e.photoCle ? 'Remplacement' : 'Ajout'} de la photo de ${e.nom} ${e.prenoms}`,
+    lien: `/eleves/${id}`,
+  });
   res.json({ photoCle: cle });
 });
 
@@ -256,13 +317,26 @@ eleves.post('/import', roles('SURVEILLANT_GENERAL'), televersement.single('fichi
 
   await prisma.$transaction(
     async (tx) => {
-      const { annee, prefixe } = await contexte(tx, anneeId, classeId);
+      const { annee, prefixe, classe } = await contexte(tx, anneeId, classeId);
+      const eleveIds: string[] = [];
       for (const { ligne: _, redoublant, ...data } of lignes) {
         const matricule = await nouveauMatricule(tx, prefixe, annee.libelle);
-        await tx.eleve.create({
+        const e = await tx.eleve.create({
           data: { ...data, sexe: data.sexe as Sexe, matricule, inscriptions: { create: { anneeId, classeId, redoublant } } },
         });
+        eleveIds.push(e.id);
       }
+      await consigner(
+        req,
+        {
+          domaine: 'SCOLARITE',
+          action: 'eleve.importer',
+          libelle: `Import de ${lignes.length} élève(s) en ${classe.nom} (fichier ${f.originalname})`,
+          lien: `/eleves?classe=${classeId}`,
+          annulation: { eleveIds },
+        },
+        tx,
+      );
     },
     { timeout: 60_000 },
   );
@@ -321,15 +395,27 @@ eleves.post('/reinscrire', roles('SURVEILLANT_GENERAL'), async (req, res) => {
   const { eleveIds, classeId, redoublant } = z
     .object({ eleveIds: z.array(z.string()).min(1), classeId: z.string().min(1), redoublant: z.boolean() })
     .parse(req.body);
-  const classe = await prisma.classe.findUniqueOrThrow({ where: { id: classeId } });
+  const classe = await prisma.classe.findUniqueOrThrow({ where: { id: classeId }, include: { annee: { select: { libelle: true } } } });
   const deja = await prisma.inscription.findMany({
     where: { anneeId: classe.anneeId, eleveId: { in: eleveIds } },
     select: { eleveId: true },
   });
   const aInscrire = eleveIds.filter((id) => !deja.some((d) => d.eleveId === id));
-  await prisma.inscription.createMany({
+  const creees = await prisma.inscription.createManyAndReturn({
     data: aInscrire.map((eleveId) => ({ eleveId, classeId, anneeId: classe.anneeId, redoublant })),
+    select: { id: true },
   });
+  if (aInscrire.length) {
+    await consigner(req, {
+      domaine: 'SCOLARITE',
+      action: 'eleve.reinscrire',
+      annulation: { inscriptionIds: creees.map((c) => c.id) },
+      libelle: `Réinscription de ${aInscrire.length} élève(s) en ${classe.nom} pour ${classe.annee.libelle}${
+        redoublant ? ', comme redoublants' : ''
+      }`,
+      lien: `/eleves?classe=${classeId}`,
+    });
+  }
   res.json({
     message: `${aInscrire.length} élève(s) inscrit(s) en ${classe.nom}.${
       deja.length ? ` ${deja.length} déjà inscrit(s) cette année, ignoré(s).` : ''

@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 import { roles } from '../lib/auth';
 import { texte, texteOptionnel } from '../lib/validation';
 import { invalide } from '../lib/erreurs';
+import { consigner } from '../lib/decisions';
 
 export const etablissement = Router();
 
@@ -29,7 +30,16 @@ etablissement.put('/', roles('SURVEILLANT_GENERAL'), async (req, res) => {
       prefixeMatricule: z.string().trim().regex(/^[A-Z0-9]{2,6}$/, '2 à 6 lettres ou chiffres majuscules'),
     })
     .parse(req.body);
-  res.json(await prisma.etablissement.upsert({ where: { id: 1 }, create: data, update: data }));
+  const avant = await prisma.etablissement.findUnique({ where: { id: 1 } });
+  const e = await prisma.etablissement.upsert({ where: { id: 1 }, create: data, update: data });
+  await consigner(req, {
+    domaine: 'ADMINISTRATION',
+    action: 'etablissement.modifier',
+    annulation: { avant: avant ? { ...avant, id: undefined } : null, apres: data },
+    libelle: "Modification des informations de l'établissement",
+    lien: '/parametres',
+  });
+  res.json(e);
 });
 
 export const baremes = Router();
@@ -49,10 +59,23 @@ baremes.put('/:type', roles('SURVEILLANT_GENERAL'), async (req, res) => {
   if (!seuils.some((s) => s.min === 0)) invalideSansZero();
   if (new Set(seuils.map((s) => s.min)).size !== seuils.length) throw invalide('Deux mentions ont la même borne.');
   if (new Set(seuils.map((s) => s.libelle)).size !== seuils.length) throw invalide('Deux mentions ont le même libellé.');
-  await prisma.$transaction([
-    prisma.bareme.deleteMany({ where: { type } }),
-    prisma.bareme.createMany({ data: seuils.map((s) => ({ ...s, type })) }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    const avant = await tx.bareme.findMany({ where: { type } });
+    await tx.bareme.deleteMany({ where: { type } });
+    await tx.bareme.createMany({ data: seuils.map((s) => ({ ...s, type })) });
+    const lignes = [...seuils].sort((a, b) => b.min - a.min).map((s) => `${s.libelle} dès ${s.min}`);
+    await consigner(
+      req,
+      {
+        domaine: 'ADMINISTRATION',
+        action: 'bareme.modifier',
+        annulation: { type, avant: avant.map((b) => ({ libelle: b.libelle, libelleLong: b.libelleLong, min: Number(b.min) })) },
+        libelle: `Modification du barème des ${type === 'GRADE' ? 'grades' : 'cotes'} : ${lignes.join(', ')}`,
+        lien: '/parametres',
+      },
+      tx,
+    );
+  });
   res.json({ message: 'Barème enregistré.' });
 });
 

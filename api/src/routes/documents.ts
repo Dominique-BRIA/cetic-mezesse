@@ -11,6 +11,7 @@ import { chargerBaremes, resultatsClasse } from '../services/resultats';
 import { dessinerBulletin } from '../pdf/bulletin';
 import { dateFr, enBuffer, nouveauDocument } from '../pdf/commun';
 import { listeClasse } from '../pdf/liste';
+import { cartesScolaires, type EleveCarte } from '../pdf/carte';
 
 export const documents = Router();
 
@@ -115,6 +116,51 @@ documents.post('/bulletins', async (req, res) => {
   const nom =
     classes.length === 1 ? `bulletins-${nomFichier(classes[0].nom)}-${p}` : `bulletins-${p}-${classes.length}-classes`;
   envoyerPdf(res, await enBuffer(doc), nom);
+});
+
+// ---------- Cartes scolaires (RG-31) ----------
+
+const selection = z.object({ classeIds: z.array(z.string()).default([]), inscriptionIds: z.array(z.string()).default([]) });
+
+// Élèves actifs des classes choisies entières et des élèves choisis un à un.
+async function elevesChoisis(body: unknown) {
+  const { classeIds, inscriptionIds } = selection.parse(body);
+  if (!classeIds.length && !inscriptionIds.length) throw invalide('Choisissez au moins une classe ou un élève.');
+  return prisma.inscription.findMany({
+    where: { statut: 'ACTIF', OR: [{ classeId: { in: classeIds } }, { id: { in: inscriptionIds } }] },
+    include: { eleve: true, classe: { select: { nom: true, niveau: true } }, annee: { select: { libelle: true } } },
+    orderBy: [{ classe: { niveau: 'asc' } }, { classe: { nom: 'asc' } }, { eleve: { nom: 'asc' } }, { eleve: { prenoms: 'asc' } }],
+  });
+}
+
+// Vérification avant impression : la photo est obligatoire sur la carte.
+documents.post('/cartes/verification', async (req, res) => {
+  const eleves = await elevesChoisis(req.body);
+  res.json({
+    total: eleves.length,
+    sansPhoto: eleves
+      .filter((i) => !i.eleve.photoCle)
+      .map((i) => ({ inscriptionId: i.id, eleveId: i.eleveId, nom: i.eleve.nom, prenoms: i.eleve.prenoms, matricule: i.eleve.matricule, classe: i.classe.nom })),
+  });
+});
+
+// Un seul PDF, dix cartes par page A4. Les élèves sans photo (ou dont la photo est introuvable) sont écartés.
+documents.post('/cartes', async (req, res) => {
+  const eleves = await elevesChoisis(req.body);
+  const etab = await etablissement();
+  const cartes: EleveCarte[] = [];
+  const photos = await Promise.all(eleves.map((i) => (i.eleve.photoCle ? lire(i.eleve.photoCle) : Promise.resolve(null))));
+  eleves.forEach((i, k) => {
+    const photo = photos[k];
+    if (!photo) return;
+    cartes.push({ ...i.eleve, classe: i.classe.nom, photo });
+  });
+  if (!cartes.length) throw invalide("Aucun des élèves choisis n'a de photo : ajoutez-les depuis leur fiche avant d'imprimer les cartes.");
+  const annees = [...new Set(eleves.map((i) => i.annee.libelle))];
+  const classes = [...new Set(eleves.map((i) => i.classe.nom))];
+  res.setHeader('X-Cartes-Ecartees', String(eleves.length - cartes.length));
+  const nom = classes.length === 1 ? `cartes-${nomFichier(classes[0])}` : `cartes-scolaires-${cartes.length}-eleves`;
+  envoyerPdf(res, await enBuffer(cartesScolaires(etab, annees.join(' / '), cartes)), nom);
 });
 
 async function chargerListe(classeId: string) {

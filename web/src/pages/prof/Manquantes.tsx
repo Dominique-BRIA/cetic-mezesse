@@ -44,7 +44,7 @@ export default function PageManquantes() {
 export function ListeManquantes({ donnees, avecProf }: { donnees: Manquantes; avecProf?: boolean }) {
   if (!donnees.matieres.length) return <Vide titre="Aucune matière" />;
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="space-y-4">
       {donnees.matieres.map(({ matiere, effectif, manquants }) => (
         <Carte
           key={matiere.id}

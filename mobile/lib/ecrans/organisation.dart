@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api.dart';
 import '../etat.dart';
+import '../format.dart';
 import '../theme.dart';
 import '../widgets.dart';
 
@@ -50,27 +51,44 @@ class EcranClasses extends StatefulWidget {
 class _EcranClassesState extends State<EcranClasses> {
   int _version = 0;
 
-  Future<void> _formulaire(Map? classe) async {
+  // Le nom découle du niveau, de la spécialité et de la lettre (RG-29) : on n'en montre que l'aperçu.
+  Future<void> _formulaire(Map? classe, List<Map<String, dynamic>> classes) async {
     final profs = await _profs();
+    final specialites = await _specialites();
     if (!mounted) return;
-    final nom = TextEditingController(text: classe?['nom'] as String? ?? '');
-    final nomEn = TextEditingController(text: classe?['nomEn'] as String? ?? '');
-    final specialite = TextEditingController(text: classe?['specialite'] as String? ?? '');
     var niveau = classe?['niveau'] as int? ?? 1;
+    var specialiteId = classe?['specialiteId'] as String? ?? '';
     String? pp = classe?['profPrincipalId'] as String?;
+    String apercu() {
+      bool meme(Map c) => c['niveau'] == niveau && (c['specialiteId'] ?? '') == specialiteId;
+      final voisines = classes.where((c) => meme(c) && c['id'] != classe?['id']).toList();
+      final reste = classe != null && meme(classe);
+      final rang = reste ? voisines.where((c) => (c['numero'] as int) < (classe['numero'] as int)).length : voisines.length;
+      final sp = specialites.where((s) => s['id'] == specialiteId).firstOrNull;
+      return nomClasse(niveau, sp?['nom'] as String?, rang, voisines.length + 1);
+    }
+
     final ok = await feuilleFormulaire(
       context,
       classe == null ? 'Nouvelle classe' : 'Modifier ${classe['nom']}',
       (ctx, maj) => Column(children: [
-        _espace(TextField(controller: nom, decoration: const InputDecoration(labelText: 'Nom', helperText: '« 2e année », « 1re année ELEC »…'))),
-        _espace(TextField(controller: nomEn, decoration: const InputDecoration(labelText: 'Nom en anglais (facultatif)'))),
         _espace(Choix<int>(
           libelle: 'Niveau',
           valeur: niveau,
           options: [for (var n = 1; n <= 7; n++) (n, '${n == 1 ? '1re' : '${n}e'} année')],
           changer: (v) => maj(() => niveau = v!),
         )),
-        _espace(TextField(controller: specialite, decoration: const InputDecoration(labelText: 'Spécialité (facultatif)'))),
+        _espace(Choix<String>(
+          libelle: 'Spécialité',
+          valeur: specialiteId,
+          options: [('', 'Sans spécialité'), for (final s in specialites) (s['id'] as String, s['nom'] as String)],
+          changer: (v) => maj(() => specialiteId = v ?? ''),
+        )),
+        _espace(InputDecorator(
+          decoration: const InputDecoration(labelText: 'Nom de la classe', helperText: "Une lettre A, B… s'ajoute quand le niveau et la spécialité comptent plusieurs classes.",
+              helperMaxLines: 2),
+          child: Text(apercu(), style: const TextStyle(fontWeight: FontWeight.w700)),
+        )),
         Choix<String>(
           libelle: 'Professeur principal',
           valeur: pp ?? '',
@@ -79,7 +97,7 @@ class _EcranClassesState extends State<EcranClasses> {
         ),
       ]),
       () async {
-        final corps = {'nom': nom.text.trim(), 'nomEn': nomEn.text.trim(), 'niveau': niveau, 'specialite': specialite.text.trim(), 'profPrincipalId': pp};
+        final corps = {'niveau': niveau, 'specialiteId': specialiteId.isEmpty ? null : specialiteId, 'profPrincipalId': pp};
         classe == null ? await Api.i.post('/classes', corps) : await Api.i.put('/classes/${classe['id']}', corps);
       },
     );
@@ -88,21 +106,54 @@ class _EcranClassesState extends State<EcranClasses> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: Etat.i.estSG
-          ? FloatingActionButton.extended(onPressed: () => _formulaire(null), icon: const Icon(Icons.add), label: const Text('Nouvelle classe'))
-          : null,
-      body: Charge<List<Map<String, dynamic>>>(
-        key: ValueKey(_version),
-        charger: chargerClasses,
-        construire: (context, classes, recharger) => Defilement(rafraichir: recharger, enfants: [
-          if (classes.isEmpty) const Carte(enfant: Vide('Aucune classe', texte: 'Créez les classes, puis les groupes de matières.')),
+    return Charge<List<Map<String, dynamic>>>(
+      key: ValueKey(_version),
+      charger: chargerClasses,
+      construire: (context, classes, recharger) => Scaffold(
+        backgroundColor: Colors.transparent,
+        floatingActionButton: Etat.i.estSG
+            ? FloatingActionButton.extended(
+                onPressed: () => _formulaire(null, classes), icon: const Icon(Icons.add), label: const Text('Nouvelle classe'))
+            : null,
+        body: Defilement(rafraichir: recharger, enfants: [
+          if (Etat.i.estSG)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.sell_outlined, size: 18),
+                label: const Text('Spécialités'),
+                onPressed: () async {
+                  await Navigator.push(context, MaterialPageRoute(builder: (_) => const EcranSpecialites()));
+                  setState(() => _version++);
+                },
+              ),
+            ),
+          if (classes.isEmpty) const Carte(enfant: Vide('Aucune classe', texte: 'Créez les spécialités, puis les classes et leurs groupes de matières.')),
           for (final c in classes)
             Carte(
               titre: c['nom'] as String,
-              action: Etat.i.estSG ? IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _formulaire(c)) : null,
+              action: Etat.i.estSG
+                  ? Row(mainAxisSize: MainAxisSize.min, children: [
+                      IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _formulaire(c, classes)),
+                      // Une classe sans élève peut être supprimée ; les lettres des autres se resserrent.
+                      if (c['_count']['inscriptions'] == 0)
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          onPressed: () async {
+                            if (!await confirmer(context, 'Supprimer cette classe ?', '${c['nom']} et ses matières seront supprimées.',
+                                action: 'Supprimer', danger: true)) {
+                              return;
+                            }
+                            if (context.mounted &&
+                                await agir(context, () => Api.i.delete('/classes/${c['id']}'), succes: 'Classe supprimée.')) {
+                              setState(() => _version++);
+                            }
+                          },
+                        ),
+                    ])
+                  : null,
               enfant: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                LigneInfo('Spécialité', c['specialite']?['nom'] as String? ?? '—'),
                 LigneInfo('Élèves', '${c['_count']['inscriptions']}', gras: true),
                 LigneInfo('Matières', '${c['_count']['matieres']}'),
                 LigneInfo('Prof. principal', c['profPrincipal'] == null ? '—' : '${c['profPrincipal']['prenom']} ${c['profPrincipal']['nom']}'),
@@ -119,6 +170,82 @@ class _EcranClassesState extends State<EcranClasses> {
                     onPressed: () => agir(context, () => Api.i.ouvrirDocument('/documents/liste?classeId=${c['id']}&format=xlsx')),
                   ),
                 ]),
+              ]),
+            ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ---------------- Spécialités ----------------
+
+Future<List<Map<String, dynamic>>> _specialites() async =>
+    (await Api.i.get('/specialites', annee: false) as List).cast<Map<String, dynamic>>();
+
+class EcranSpecialites extends StatefulWidget {
+  const EcranSpecialites({super.key});
+  @override
+  State<EcranSpecialites> createState() => _EcranSpecialitesState();
+}
+
+class _EcranSpecialitesState extends State<EcranSpecialites> {
+  int _version = 0;
+
+  Future<void> _formulaire(Map? s) async {
+    final nom = TextEditingController(text: s?['nom'] as String? ?? '');
+    final nomEn = TextEditingController(text: s?['nomEn'] as String? ?? '');
+    final ok = await feuilleFormulaire(
+      context,
+      s == null ? 'Nouvelle spécialité' : 'Modifier ${s['nom']}',
+      (ctx, maj) => Column(children: [
+        _espace(TextField(controller: nom, decoration: const InputDecoration(labelText: 'Nom', helperText: '« Mécanique », « Électricité »…'))),
+        TextField(controller: nomEn, decoration: const InputDecoration(labelText: 'Nom en anglais (facultatif)')),
+      ]),
+      () async {
+        final corps = {'nom': nom.text.trim(), 'nomEn': nomEn.text.trim()};
+        s == null
+            ? await Api.i.envoyer('POST', '/specialites', corps: corps, annee: false)
+            : await Api.i.envoyer('PUT', '/specialites/${s['id']}', corps: corps, annee: false);
+      },
+    );
+    if (ok) setState(() => _version++);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Spécialités')),
+      floatingActionButton:
+          FloatingActionButton.extended(onPressed: () => _formulaire(null), icon: const Icon(Icons.add), label: const Text('Nouvelle spécialité')),
+      body: Charge<List<Map<String, dynamic>>>(
+        key: ValueKey(_version),
+        charger: _specialites,
+        construire: (context, liste, recharger) => Defilement(rafraichir: recharger, enfants: [
+          Text("Elles servent d'une année sur l'autre. Renommer une spécialité renomme les classes qui la portent.",
+              style: TextStyle(color: context.c.encre2)),
+          const SizedBox(height: 8),
+          if (liste.isEmpty) const Carte(enfant: Vide('Aucune spécialité')),
+          for (final s in liste)
+            Carte(
+              titre: s['nom'] as String,
+              action: Row(mainAxisSize: MainAxisSize.min, children: [
+                IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _formulaire(s)),
+                if (s['_count']['classes'] == 0)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    onPressed: () async {
+                      if (!await confirmer(context, 'Supprimer cette spécialité ?', s['nom'] as String, danger: true)) return;
+                      if (context.mounted &&
+                          await agir(context, () => Api.i.envoyer('DELETE', '/specialites/${s['id']}', annee: false), succes: 'Spécialité supprimée.')) {
+                        setState(() => _version++);
+                      }
+                    },
+                  ),
+              ]),
+              enfant: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                LigneInfo('En anglais', s['nomEn'] as String? ?? '—'),
+                LigneInfo('Classes', '${s['_count']['classes']}'),
               ]),
             ),
         ]),

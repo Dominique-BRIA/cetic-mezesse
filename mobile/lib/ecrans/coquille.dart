@@ -9,7 +9,10 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'accueil.dart';
 import 'admin.dart';
+import 'cartes.dart';
 import 'connexion.dart';
+import 'decisions.dart';
+import 'notifications.dart';
 import 'eleves.dart';
 import 'evaluations.dart';
 import 'organisation.dart';
@@ -35,6 +38,7 @@ final destinations = <Destination>[
   Destination('manquantes', 'Élèves sans note', Icons.checklist, [_pr], () => const EcranManquantes(), section: 'Mes cours'),
   Destination('stats-prof', 'Statistiques', Icons.bar_chart, [_pr], () => const EcranStatsMesMatieres(), section: 'Mes cours'),
   Destination('eleves', 'Élèves', Icons.people_outline, [_p, _sg], () => const EcranEleves(), section: 'Scolarité'),
+  Destination('cartes', 'Cartes scolaires', Icons.credit_card, [_p, _sg], () => const EcranCartes(), section: 'Scolarité'),
   Destination('renvoyes', 'Élèves renvoyés', Icons.person_remove_outlined, [_p, _sg], () => const EcranRenvoyes(), section: 'Scolarité'),
   Destination('reinscription', 'Réinscriptions', Icons.person_add_alt, [_sg], () => const EcranReinscription(), section: 'Scolarité'),
   Destination('classes', 'Classes', Icons.school_outlined, [_p, _sg], () => const EcranClasses(), section: 'Organisation'),
@@ -42,9 +46,10 @@ final destinations = <Destination>[
   Destination('matieres', 'Matières', Icons.menu_book_outlined, [_p, _sg], () => const EcranMatieres(), section: 'Organisation'),
   Destination('enseignants', 'Enseignants', Icons.badge_outlined, [_p, _sg], () => const EcranEnseignants(), section: 'Organisation'),
   Destination('notes', 'Notes', Icons.grid_on, [_p, _sg], () => const EcranNotes(), section: 'Évaluations'),
-  Destination('documents', 'Bulletins et listes', Icons.description_outlined, [_p, _sg], () => const EcranDocuments(), section: 'Évaluations'),
+  Destination('bulletins', 'Bulletins', Icons.description_outlined, [_p, _sg], () => const EcranBulletins(), section: 'Évaluations'),
   Destination('statistiques', 'Statistiques', Icons.bar_chart, [_p, _sg], () => const EcranStatistiques(), section: 'Évaluations'),
   Destination('classement', 'Classement général', Icons.emoji_events_outlined, [_p, _sg], () => const EcranClassement(), section: 'Évaluations'),
+  Destination('decisions', 'Décisions prises', Icons.gavel, [_p], () => const EcranDecisions(), section: 'Administration'),
   Destination('annees', 'Années et séquences', Icons.date_range_outlined, [_p, _sg], () => const EcranAnnees(), section: 'Administration'),
   Destination('parametres', 'Paramètres', Icons.settings_outlined, [_sg], () => const EcranParametres(), section: 'Administration'),
 ];
@@ -68,6 +73,11 @@ class Coquille extends StatelessWidget {
             appBar: AppBar(
               title: Text(d.libelle),
               actions: [
+                ClocheNotifications(
+                  ouvrir: (cle) {
+                    if (visibles.any((x) => x.cle == cle)) destinationCourante.value = cle;
+                  },
+                ),
                 ListenableBuilder(
                   listenable: FileAttente.i,
                   builder: (_, __) => FileAttente.i.envois.isEmpty

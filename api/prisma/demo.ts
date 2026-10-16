@@ -1,9 +1,10 @@
-// Jeu de démonstration : 4 classes, ~70 élèves, des professeurs et des notes sur les séquences 1 et 2.
+// Jeu de démonstration : 5 classes de deux spécialités, ~70 élèves, des professeurs et des notes sur les séquences 1 et 2.
 // Usage : npm run db:demo -- --reinitialiser   (efface les élèves, classes, matières et notes existants)
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { amorcer } from './seed';
+import { nomsClasses } from '../src/lib/classes';
 
 const prisma = new PrismaClient();
 
@@ -73,6 +74,8 @@ async function main() {
     await prisma.matiere.deleteMany();
     await prisma.groupeMatiere.deleteMany();
     await prisma.classe.deleteMany();
+    await prisma.specialite.deleteMany();
+    await prisma.decision.deleteMany();
     await prisma.utilisateur.deleteMany({ where: { role: 'PROFESSEUR' } });
     await prisma.compteur.deleteMany();
   }
@@ -92,18 +95,30 @@ async function main() {
   }
 
   const classes = [];
-  for (let n = 1; n <= 4; n++) {
-    classes.push(
-      await prisma.classe.create({
-        data: {
-          anneeId: annee.id,
-          nom: `${n === 1 ? '1re' : `${n}e`} année`,
-          nomEn: `Year ${n}`,
-          niveau: n,
-          profPrincipalId: profs[(n * 3) % profs.length].id,
-        },
-      }),
-    );
+  const meca = await prisma.specialite.create({ data: { nom: 'Mécanique', nomEn: 'Mechanics' } });
+  const elec = await prisma.specialite.create({ data: { nom: 'Électricité', nomEn: 'Electricity' } });
+  // [niveau, spécialité, nombre de classes] : deux classes de 1re année Mécanique, donc A et B.
+  const structure = [
+    [1, meca, 2],
+    [2, elec, 1],
+    [3, meca, 1],
+    [4, elec, 1],
+  ] as const;
+  for (const [niveau, specialite, nombre] of structure) {
+    for (const [i, noms] of nomsClasses(niveau, specialite, nombre).entries()) {
+      classes.push(
+        await prisma.classe.create({
+          data: {
+            anneeId: annee.id,
+            ...noms,
+            niveau,
+            specialiteId: specialite.id,
+            numero: i + 1,
+            profPrincipalId: profs[(classes.length * 3 + 3) % profs.length].id,
+          },
+        }),
+      );
+    }
   }
   const groupes = [];
   for (const [ordre, nom, nomEn] of [
@@ -135,7 +150,7 @@ async function main() {
   }
 
   // Élèves et notes
-  const effectifs = [20, 18, 17, 15];
+  const effectifs = [18, 17, 18, 16, 15];
   let rang = 0;
   const aa = annee.libelle.slice(2, 4);
   for (const [k, c] of classes.entries()) {

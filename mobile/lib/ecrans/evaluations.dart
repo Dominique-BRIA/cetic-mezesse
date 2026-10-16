@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets.dart';
 import 'graphiques.dart';
 import 'prof.dart';
+import 'selection.dart';
 
 /// Sélecteurs en tête d'écran, sur une carte.
 Widget _filtres(List<Widget> champs) => Padding(
@@ -149,20 +150,17 @@ class _Releve extends StatelessWidget {
   }
 }
 
-// ---------------- Bulletins et listes ----------------
+// ---------------- Bulletins ----------------
 
-class EcranDocuments extends StatefulWidget {
-  const EcranDocuments({super.key});
+class EcranBulletins extends StatefulWidget {
+  const EcranBulletins({super.key});
   @override
-  State<EcranDocuments> createState() => _EcranDocumentsState();
+  State<EcranBulletins> createState() => _EcranBulletinsState();
 }
 
-class _EcranDocumentsState extends State<EcranDocuments> {
+class _EcranBulletinsState extends State<EcranBulletins> {
   String _periode = 'S1';
-  bool _parEleves = false;
-  final Set<String> _classes = {};
-  String? _classeEleves;
-  final Set<String> _eleves = {};
+  final _selection = Selection();
   bool _envoi = false;
 
   @override
@@ -170,9 +168,7 @@ class _EcranDocumentsState extends State<EcranDocuments> {
     return Charge<List<Map<String, dynamic>>>(
       charger: chargerClasses,
       construire: (context, classes, _) {
-        final nombre = _parEleves
-            ? _eleves.length
-            : classes.where((c) => _classes.contains(c['id'])).fold<int>(0, (s, c) => s + (c['_count']['inscriptions'] as int));
+        final nombre = _selection.nombre(classes);
         return Defilement(
           bas: FilledButton.icon(
             icon: _envoi
@@ -185,92 +181,19 @@ class _EcranDocumentsState extends State<EcranDocuments> {
                     setState(() => _envoi = true);
                     await agir(
                       context,
-                      () => Api.i.ouvrirDocument('/documents/bulletins', methode: 'POST', corps: {
-                        'periode': _periode,
-                        if (_parEleves) 'inscriptionIds': _eleves.toList() else 'classeIds': _classes.toList(),
-                      }),
+                      () => Api.i.ouvrirDocument('/documents/bulletins', methode: 'POST', corps: {'periode': _periode, ..._selection.corps()}),
                     );
                     if (mounted) setState(() => _envoi = false);
                   },
           ),
           enfants: [
+            Text('Un seul PDF, une page A4 par élève, prêt à imprimer.', style: TextStyle(color: context.c.encre2)),
+            const SizedBox(height: 8),
             Carte(
-              titre: 'Bulletins de notes',
               enfant: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 ChoixPeriode(valeur: _periode, changer: (v) => setState(() => _periode = v)),
                 const SizedBox(height: 10),
-                SegmentedButton<bool>(
-                  segments: const [ButtonSegment(value: false, label: Text('Classes entières')), ButtonSegment(value: true, label: Text('Élèves choisis'))],
-                  selected: {_parEleves},
-                  onSelectionChanged: (s) => setState(() => _parEleves = s.first),
-                ),
-                const SizedBox(height: 6),
-                if (!_parEleves) ...[
-                  for (final c in classes)
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _classes.contains(c['id']),
-                      title: Text(c['nom'] as String),
-                      secondary: Text('${c['_count']['inscriptions']}', style: TextStyle(color: context.c.encre3)),
-                      onChanged: (v) => setState(() => v == true ? _classes.add(c['id'] as String) : _classes.remove(c['id'])),
-                    ),
-                  if (classes.length > 1)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: () => setState(() =>
-                            _classes.length == classes.length ? _classes.clear() : _classes.addAll(classes.map((c) => c['id'] as String))),
-                        child: Text(_classes.length == classes.length ? 'Aucune' : "Tout l'établissement"),
-                      ),
-                    ),
-                ] else ...[
-                  const SizedBox(height: 6),
-                  Choix<String>(
-                    libelle: 'Classe',
-                    valeur: _classeEleves,
-                    options: [for (final c in classes) (c['id'] as String, c['nom'] as String)],
-                    changer: (v) => setState(() {
-                      _classeEleves = v;
-                      _eleves.clear();
-                    }),
-                  ),
-                  if (_classeEleves != null)
-                    Charge<List>(
-                      key: ValueKey(_classeEleves),
-                      charger: () async => await Api.i.get('/eleves?classeId=$_classeEleves') as List,
-                      construire: (context, eleves, _) => Column(children: [
-                        for (final i in eleves.cast<Map>())
-                          CheckboxListTile(
-                            contentPadding: EdgeInsets.zero,
-                            value: _eleves.contains(i['id']),
-                            title: Text('${i['eleve']['nom']} ${i['eleve']['prenoms']}'),
-                            onChanged: (v) => setState(() => v == true ? _eleves.add(i['id'] as String) : _eleves.remove(i['id'])),
-                          ),
-                      ]),
-                    ),
-                ],
-              ]),
-            ),
-            Carte(
-              titre: 'Listes de classe',
-              sansMarge: true,
-              enfant: Column(children: [
-                for (final c in classes)
-                  ListTile(
-                    title: Text(c['nom'] as String),
-                    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                      IconButton(
-                        tooltip: 'PDF',
-                        icon: const Icon(Icons.picture_as_pdf_outlined),
-                        onPressed: () => agir(context, () => Api.i.ouvrirDocument('/documents/liste?classeId=${c['id']}&format=pdf')),
-                      ),
-                      IconButton(
-                        tooltip: 'Excel',
-                        icon: const Icon(Icons.table_chart_outlined),
-                        onPressed: () => agir(context, () => Api.i.ouvrirDocument('/documents/liste?classeId=${c['id']}&format=xlsx')),
-                      ),
-                    ]),
-                  ),
+                ChoixSelection(selection: _selection, classes: classes, changer: setState),
               ]),
             ),
           ],

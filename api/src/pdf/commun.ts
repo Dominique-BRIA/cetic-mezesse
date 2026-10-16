@@ -132,10 +132,15 @@ export function enteteOfficiel(doc: Doc, e: Etablissement, y = 22): number {
   return yy + 2;
 }
 
+// Nom de l'établissement en capitales, sans accent : « CETIC DE MEZESSE ».
+export function capitales(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+}
+
 // Nom complet s'il tient sur la ligne, sinon la forme courte (sigle et localité).
 function nomCourt(doc: Doc, complet: string, court: string, largeur: number): string {
   doc.font('Helvetica-Bold').fontSize(7);
-  return doc.widthOfString(t(complet.toUpperCase())) <= largeur ? complet.toUpperCase() : court.toUpperCase();
+  return doc.widthOfString(t(capitales(complet))) <= largeur ? capitales(complet) : capitales(court);
 }
 
 function prepositionRegion(region: string): string {
