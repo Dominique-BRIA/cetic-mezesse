@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 // Fond de l'application : motif répété d'objets scolaires et techniques dessinés au trait.
 // Tout est tracé ici en SVG ; la couleur suit le thème (variable --motif).
 
@@ -112,14 +114,21 @@ const PETITS_PLACES: [keyof typeof PETITS, number, number][] = [
   ['zigzag', 4, 2],
 ];
 
-export function MotifFond() {
+// Par défaut : fond de page fixe aux couleurs du thème. Avec trait et className, le motif
+// peut habiller un panneau (couleur de trait libre, sans fond).
+export function MotifFond({ trait, className }: { trait?: string; className?: string } = {}) {
+  const id = useId();
   return (
-    <svg aria-hidden className="pointer-events-none fixed inset-0 -z-10 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      aria-hidden
+      className={className ?? 'pointer-events-none fixed inset-0 -z-10 h-full w-full'}
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <defs>
-        <pattern id="motif-ecole" width="400" height="400" patternUnits="userSpaceOnUse">
+        <pattern id={id} width="400" height="400" patternUnits="userSpaceOnUse">
           <g
             fill="none"
-            stroke="rgb(var(--motif))"
+            stroke={trait ?? 'rgb(var(--motif))'}
             strokeWidth="1.6"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -133,8 +142,8 @@ export function MotifFond() {
           </g>
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="rgb(var(--fond))" />
-      <rect width="100%" height="100%" fill="url(#motif-ecole)" />
+      {!trait && <rect width="100%" height="100%" fill="rgb(var(--fond))" />}
+      <rect width="100%" height="100%" fill={`url(#${id})`} />
     </svg>
   );
 }
