@@ -1,6 +1,7 @@
 // Outils partagés par les documents PDF (bulletins, listes).
 import PDFDocument from 'pdfkit';
 import type { Etablissement } from '@prisma/client';
+import { LOGO } from './logo';
 
 export type Doc = PDFKit.PDFDocument;
 
@@ -124,14 +125,10 @@ export function enteteOfficiel(doc: Doc, e: Etablissement, y = 22): number {
     yy += i === 1 || i === 4 ? 11.5 : 9.5;
   });
 
-  // Médaillon central : sigle et code de l'établissement (pas de logo officiel).
+  // Sceau de l'établissement au centre, code en dessous.
   const cx = A4.largeur / 2;
-  const cy = y + 26;
-  doc.save().lineWidth(0.8).circle(cx, cy, 22).stroke(COULEURS.accent);
-  doc.lineWidth(0.4).circle(cx, cy, 19).stroke(COULEURS.accent).restore();
-  ligne(doc, e.sigle, cx - 20, cy - 6, 40, { police: 'Helvetica-Bold', taille: 7.5, couleur: COULEURS.accent, align: 'center' });
-  ligne(doc, e.localite, cx - 20, cy + 3, 40, { police: 'Helvetica', taille: 5, couleur: COULEURS.accent, align: 'center' });
-  ligne(doc, e.code, cx - 50, cy + 27, 100, { taille: 5.5, couleur: COULEURS.gris, align: 'center' });
+  doc.image(LOGO, cx - 27, y - 2, { width: 54, height: 54 });
+  ligne(doc, e.code, cx - 50, y + 54, 100, { taille: 5.5, couleur: COULEURS.gris, align: 'center' });
   return yy + 2;
 }
 

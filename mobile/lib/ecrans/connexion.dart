@@ -12,15 +12,9 @@ class Marque extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = Theme.of(context).colorScheme.primary;
     final t = compacte ? 30.0 : 38.0;
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        width: t,
-        height: t,
-        decoration: BoxDecoration(color: p, borderRadius: BorderRadius.circular(6)),
-        child: CustomPaint(painter: _Signe(Theme.of(context).colorScheme.onPrimary)),
-      ),
+      Image.asset('assets/logo.png', width: t + 6, height: t + 6),
       const SizedBox(width: 10),
       Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         Text('CETIC de Mezessé', style: TextStyle(fontWeight: FontWeight.w700, fontSize: compacte ? 15 : 16.5)),
@@ -28,28 +22,6 @@ class Marque extends StatelessWidget {
       ]),
     ]);
   }
-}
-
-// Équerre et règle, comme sur le web.
-class _Signe extends CustomPainter {
-  _Signe(this.couleur);
-  final Color couleur;
-  @override
-  void paint(Canvas canvas, Size s) {
-    final k = s.width / 32;
-    final p = Paint()
-      ..color = couleur
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2 * k
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(Path()..moveTo(8 * k, 23 * k)..lineTo(8 * k, 9 * k)..lineTo(19 * k, 23 * k)..close(), p);
-    canvas.drawLine(Offset(21 * k, 9 * k), Offset(21 * k, 23 * k), p);
-    canvas.drawLine(Offset(18 * k, 12 * k), Offset(24 * k, 12 * k), p);
-  }
-
-  @override
-  bool shouldRepaint(_Signe o) => o.couleur != couleur;
 }
 
 class EcranConnexion extends StatefulWidget {

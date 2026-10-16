@@ -48,10 +48,14 @@ export function Connexion() {
 
       <main className="flex flex-1 items-start justify-center px-3 pb-16 sm:px-4 sm:pt-[2vh]">
         <div className="w-full max-w-[30rem] overflow-hidden rounded-lg border border-bord bg-surface shadow-feuille">
-          <div className="flex h-1.5" aria-hidden>
-            {DRAPEAU.map((c) => (
-              <div key={c} className="flex-1" style={{ background: c }} />
-            ))}
+          <div className="flex h-3" aria-hidden>
+            <div className="flex-1" style={{ background: DRAPEAU[0] }} />
+            <div className="flex flex-1 items-center justify-center" style={{ background: DRAPEAU[1] }}>
+              <svg viewBox="0 0 10 10" className="h-2.5 w-2.5">
+                <path d="M5 0.4 L6.1 3.7 L9.6 3.7 L6.8 5.8 L7.9 9.2 L5 7.1 L2.1 9.2 L3.2 5.8 L0.4 3.7 L3.9 3.7 Z" fill={DRAPEAU[2]} />
+              </svg>
+            </div>
+            <div className="flex-1" style={{ background: DRAPEAU[2] }} />
           </div>
 
           {/* En-tête officiel bilingue : français à gauche, anglais à droite */}
@@ -62,11 +66,7 @@ export function Connexion() {
               <div className="mt-0.5">MINESEC · DRES-Sud</div>
               <div>DDES Dja-et-Lobo</div>
             </div>
-            <svg viewBox="0 0 32 32" className="h-10 w-10 sm:h-11 sm:w-11" aria-hidden>
-              <rect width="32" height="32" rx="7" className="fill-primaire" />
-              <path d="M8 23 L8 9 L19 23 Z" fill="none" stroke="white" strokeWidth="2" strokeLinejoin="round" />
-              <path d="M21 9 v14 M18 12 h6" stroke="white" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            <img src="/logo.png" alt="Sceau du CETIC de Mezessé" className="h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]" />
             <div className="text-right text-[0.68rem] leading-snug text-encre-2 sm:text-xs">
               <div className="font-bold uppercase tracking-wide text-encre">Republic of Cameroon</div>
               <div className="italic">Peace – Work – Fatherland</div>
