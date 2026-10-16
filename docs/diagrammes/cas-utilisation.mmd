@@ -1,0 +1,43 @@
+%% Diagramme de cas d'utilisation (UML), en organigramme : un bloc par acteur, cas dans le système.
+%% « S'authentifier » est commun aux trois acteurs ; les cas partagés sont répétés dans chaque bloc.
+flowchart TB
+  subgraph BPR["Professeur"]
+    direction LR
+    PR["« acteur »<br/><b>Professeur</b>"]
+    p1(["S'authentifier, changer son mot de passe"])
+    p2(["Saisir les notes de ses matières"])
+    p3(["Saisir hors connexion (mobile)"])
+    p4(["Voir les élèves sans note"])
+    p5(["Consulter les statistiques de ses matières"])
+    PR --- p1 & p2 & p4 & p5
+    p3 -. "« extend »" .-> p2
+  end
+  subgraph BSG["Surveillant Général"]
+    direction LR
+    SG["« acteur »<br/><b>Surveillant Général</b>"]
+    s1(["Gérer les élèves : créer, modifier, importer"])
+    s2(["Gérer classes, groupes et matières"])
+    s3(["Gérer les comptes enseignants"])
+    s4(["Ouvrir ou fermer la saisie d'une séquence"])
+    s5(["Générer bulletins et listes"])
+    s6(["Consulter notes, statistiques et classement"])
+    s7(["Gérer années scolaires et réinscriptions"])
+    s8(["Paramétrer établissement et barèmes"])
+    SG --- s1 & s2 & s3 & s4 & s5 & s6 & s7 & s8
+  end
+  subgraph BPV["Proviseur"]
+    direction LR
+    PV["« acteur »<br/><b>Proviseur</b>"]
+    v1(["Consulter toutes les listes"])
+    v2(["Consulter statistiques et classement"])
+    v3(["Créer un élève"])
+    v4(["Renvoyer un élève"])
+    v5(["Réintégrer un élève"])
+    v6(["Générer bulletins et listes"])
+    PV --- v1 & v2 & v3 & v4 & v5 & v6
+  end
+  BPR ~~~ BSG ~~~ BPV
+  classDef acteur fill:#eef4fb,stroke:#1d5fa8,color:#14202e
+  classDef cas fill:#ffffff,stroke:#5b6b7d,color:#14202e
+  class PR,SG,PV acteur
+  class p1,p2,p3,p4,p5,s1,s2,s3,s4,s5,s6,s7,s8,v1,v2,v3,v4,v5,v6 cas

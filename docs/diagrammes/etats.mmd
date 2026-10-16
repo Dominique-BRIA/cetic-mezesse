@@ -1,0 +1,16 @@
+stateDiagram-v2
+  direction LR
+  state "Séquence" as SEQ {
+    [*] --> Fermee : création de l'année
+    Fermee --> Ouverte : le SG ouvre la saisie
+    Ouverte --> Fermee : le SG ferme la saisie
+    Fermee : Fermée (lecture seule)
+    Ouverte : Ouverte (saisie des professeurs)
+  }
+  state "Inscription d'un élève" as INS {
+    [*] --> Actif : création ou réinscription
+    Actif --> Renvoye : le Proviseur renvoie (motif, date)
+    Renvoye --> Actif : le Proviseur réintègre
+    Actif : Actif (listes, classements, bulletins)
+    Renvoye : Renvoyé (notes gardées, hors calculs)
+  }

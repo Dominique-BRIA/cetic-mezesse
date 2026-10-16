@@ -1,0 +1,53 @@
+/* Mise en page commune du rapport et du manuel, imprimés en PDF A4 par Chrome. */
+@page { size: A4; margin: 18mm 16mm 20mm; }
+* { box-sizing: border-box; }
+body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.5; color: #14202e; margin: 0; }
+h1, h2, h3 { color: #14202e; line-height: 1.25; }
+h2 { font-size: 17pt; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 3px solid #1d5fa8; break-after: avoid; }
+h3 { font-size: 12.5pt; margin: 18px 0 6px; color: #154a85; break-after: avoid; }
+h4 { font-size: 11pt; margin: 12px 0 4px; break-after: avoid; }
+p { margin: 6px 0; text-align: justify; }
+ul, ol { margin: 6px 0 6px 20px; padding: 0; }
+li { margin: 2px 0; }
+.chapitre { break-before: page; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.5pt; break-inside: auto; }
+tr { break-inside: avoid; }
+th { background: #e4effa; color: #154a85; text-align: left; font-weight: 600; }
+th, td { border: 1px solid #d6e1ec; padding: 5px 7px; vertical-align: top; }
+code, .formule { font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+.formule { display: block; padding: 6px 10px; margin: 6px 0; }
+.encadre { border-left: 4px solid #1d5fa8; background: #eef4fb; padding: 8px 12px; margin: 10px 0; border-radius: 0 6px 6px 0; break-inside: avoid; }
+.encadre.attention { border-left-color: #b45309; background: #fff7ed; }
+figure { margin: 12px 0; text-align: center; break-inside: avoid; }
+figure img { max-width: 100%; max-height: 118mm; border: 1px solid #d6e1ec; border-radius: 6px; }
+figure.diagramme img { border: none; max-height: 200mm; }
+figure.telephone img { max-height: 120mm; }
+figcaption { font-size: 9pt; color: #5b6676; margin-top: 4px; font-style: italic; }
+.garde { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; text-align: center; }
+.garde .drapeau { display: flex; height: 8px; margin-bottom: 8mm; }
+.garde .drapeau div { flex: 1; }
+.garde .entete { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; font-size: 9pt; color: #4e5d70; }
+.garde .entete .gauche { text-align: left; }
+.garde .entete .droite { text-align: right; }
+.garde .entete b { color: #14202e; }
+.garde .sceau { width: 120px; height: 120px; }
+.garde h1 { font-size: 26pt; margin: 18mm 0 6px; }
+.garde .sous { font-size: 13pt; color: #4e5d70; text-align: center; }
+.garde .ue { display: inline-block; margin-top: 14px; padding: 5px 14px; border-radius: 4px; background: #1d5fa8; color: #fff; font-weight: 600; }
+.garde .bas { font-size: 10.5pt; color: #33415a; text-align: left; border-top: 2px solid #1d5fa8; padding-top: 10px; }
+.garde .bas td { border: none; padding: 3px 0; }
+.sommaire ol { list-style: none; margin-left: 0; }
+.sommaire li { display: flex; border-bottom: 1px dotted #c3cfdc; padding: 3px 0; }
+.sommaire li span:first-child { flex: 1; }
+.grille2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.carte { border: 1px solid #d6e1ec; border-radius: 8px; padding: 8px 10px; break-inside: avoid; }
+.carte b { color: #154a85; }
+.etape { display: flex; gap: 10px; margin: 6px 0; break-inside: avoid; }
+.etape .num { flex: 0 0 24px; height: 24px; border-radius: 12px; background: #1d5fa8; color: #fff; font-weight: 700; text-align: center; line-height: 24px; font-size: 10pt; }
+.cote-a-cote { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+
+/* Pages en paysage pour les grands diagrammes (MCD, MLD) */
+@page paysage { size: A4 landscape; margin: 12mm 14mm; }
+.paysage { page: paysage; }
+.paysage figure { margin: 0; }
+.paysage figure img { width: 100%; max-height: 172mm; object-fit: contain; }

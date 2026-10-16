@@ -1,0 +1,28 @@
+sequenceDiagram
+  autonumber
+  actor P as Professeur
+  participant M as Application mobile
+  participant F as File d'attente (téléphone)
+  participant A as API
+  participant B as Base PostgreSQL
+  P->>M: Choisit matière, classe et séquence
+  M->>A: GET /notes/feuille
+  alt Réseau disponible
+    A->>B: élèves actifs, notes, compétence
+    B-->>A: données
+    A-->>M: feuille de notes (copie gardée sur le téléphone)
+  else Pas de réseau
+    M->>M: affiche la dernière copie locale
+  end
+  P->>M: Saisit les notes puis « Enregistrer »
+  M->>A: PUT /notes/feuille
+  alt Réseau disponible
+    A->>A: contrôle rôle, matière attribuée, séquence ouverte, note entre 0 et 20
+    A->>B: écriture des notes (transaction)
+    A-->>M: « n note(s) enregistrée(s) »
+  else Pas de réseau
+    M->>F: garde les notes en attente
+    Note over F: nouvel essai au retour du réseau,<br/>chaque minute ou à la demande
+    F->>A: PUT /notes/feuille
+    A-->>F: 200 retirées de la file, ou 409 séquence fermée (signalé)
+  end

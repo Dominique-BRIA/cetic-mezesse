@@ -1,0 +1,26 @@
+flowchart LR
+  subgraph Clients
+    NAV["Navigateur<br/>(Proviseur, SG, professeurs)"]
+    TEL["Téléphone Android<br/>application Flutter"]
+  end
+  subgraph Vercel
+    WEB["Client web React<br/>(fichiers statiques)"]
+  end
+  subgraph Azure["Azure App Service"]
+    API["API Node.js / Express<br/>calculs, PDF, Excel"]
+  end
+  subgraph Neon
+    BD[("PostgreSQL")]
+  end
+  subgraph Backblaze["Backblaze B2"]
+    S3[("Photos des élèves")]
+  end
+  subgraph GitHub
+    GH["Dépôt du code"] --> GA["GitHub Actions<br/>construction de l'APK"]
+  end
+  NAV -- HTTPS --> WEB
+  NAV -- "HTTPS, JSON, jeton JWT" --> API
+  TEL -- "HTTPS, JSON, jeton JWT" --> API
+  API -- Prisma --> BD
+  API -- "API S3" --> S3
+  GA -. APK .-> TEL

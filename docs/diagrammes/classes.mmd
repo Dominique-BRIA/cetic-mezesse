@@ -1,0 +1,90 @@
+classDiagram
+  direction LR
+  class Utilisateur {
+    +String nom
+    +String prenom
+    +String telephone
+    +String email
+    +Role role
+    +Boolean actif
+    +Boolean doitChangerMotDePasse
+    +connecter(identifiant, motDePasse) Jeton
+    +changerMotDePasse(ancien, nouveau)
+  }
+  class Role {
+    <<enumeration>>
+    PROVISEUR
+    SURVEILLANT_GENERAL
+    PROFESSEUR
+  }
+  class AnneeScolaire {
+    +String libelle
+    +Boolean active
+    +activer()
+    +copierStructure(source)
+  }
+  class Sequence {
+    +Int numero
+    +Int trimestre
+    +Boolean saisieOuverte
+    +ouvrir()
+    +fermer()
+  }
+  class Classe {
+    +String nom
+    +Int niveau
+    +String specialite
+  }
+  class GroupeMatiere {
+    +String nom
+    +Int ordre
+  }
+  class Matiere {
+    +String nom
+    +Int coefficient
+    +Int ordre
+  }
+  class Eleve {
+    +String matricule
+    +String matriculeNational
+    +String nom
+    +String prenoms
+    +Sexe sexe
+    +Date dateNaissance
+  }
+  class Inscription {
+    +Boolean redoublant
+    +Statut statut
+    +renvoyer(motif, date)
+    +reintegrer(motif)
+  }
+  class Note {
+    +Decimal valeur
+  }
+  class Renvoi {
+    +Date date
+    +String motif
+    +Date reintegreLe
+  }
+  class CalculResultats {
+    <<service>>
+    +calculerResultats(periode, matieres, inscriptions, notes) ResultatsClasse
+    +classer(elements) Rang
+    +mention(valeur, seuils) String
+  }
+  Utilisateur --> Role
+  AnneeScolaire "1" *-- "6" Sequence
+  AnneeScolaire "1" *-- "0..*" Classe
+  AnneeScolaire "1" *-- "0..*" GroupeMatiere
+  GroupeMatiere "1..*" -- "0..*" Classe : sert à
+  Classe "1" *-- "0..*" Matiere
+  GroupeMatiere "1" -- "0..*" Matiere : range
+  Utilisateur "0..1" -- "0..*" Matiere : enseigne
+  Utilisateur "0..1" -- "0..*" Classe : encadre
+  Eleve "1" -- "1..*" Inscription
+  Classe "1" -- "0..*" Inscription
+  Inscription "1" -- "0..*" Note
+  Matiere "1" -- "0..*" Note
+  Sequence "1" -- "0..*" Note
+  Inscription "1" -- "0..*" Renvoi
+  CalculResultats ..> Note : lit

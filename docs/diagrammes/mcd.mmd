@@ -1,0 +1,48 @@
+%% MCD (formalisme Merise) : entités en rectangles, associations en ovales, cardinalités sur les liens.
+flowchart LR
+  ANNEE["<b>ANNÉE SCOLAIRE</b><hr/><u>id_annee</u><br/>libellé<br/>active"]
+  SEQ["<b>SÉQUENCE</b><hr/><u>id_sequence</u><br/>numéro<br/>trimestre<br/>saisie ouverte"]
+  CLASSE["<b>CLASSE</b><hr/><u>id_classe</u><br/>nom, nom anglais<br/>niveau<br/>spécialité"]
+  GROUPE["<b>GROUPE DE MATIÈRES</b><hr/><u>id_groupe</u><br/>nom, nom anglais<br/>ordre"]
+  MAT["<b>MATIÈRE</b><hr/><u>id_matiere</u><br/>nom, nom anglais<br/>coefficient<br/>ordre"]
+  UTIL["<b>UTILISATEUR</b><hr/><u>id_utilisateur</u><br/>nom, prénom<br/>téléphone, e-mail<br/>mot de passe, rôle<br/>actif"]
+  ELEVE["<b>ÉLÈVE</b><hr/><u>id_eleve</u><br/>matricule, matricule national<br/>nom, prénoms, sexe<br/>date et lieu de naissance<br/>photo, parent"]
+  INS["<b>INSCRIPTION</b><hr/><u>id_inscription</u><br/>redoublant<br/>statut"]
+  RENV["<b>RENVOI</b><hr/><u>id_renvoi</u><br/>date, motif<br/>date de réintégration<br/>motif de réintégration"]
+
+  a1(["COMPTER"])
+  a2(["ORGANISER"])
+  a3(["DÉFINIR"])
+  a4(["REGROUPER"])
+  a5(["PROPOSER"])
+  a6(["RANGER"])
+  a7(["ENSEIGNER"])
+  a8(["ENCADRER"])
+  a9(["SUIVRE"])
+  a10(["ACCUEILLIR"])
+  a11(["OBTENIR<hr/>valeur"])
+  a12(["VISER<hr/>compétence"])
+  a13(["CONCERNER"])
+  a14(["DÉCIDER"])
+
+  ANNEE ---|"1,n"| a1 ---|"1,1"| SEQ
+  ANNEE ---|"0,n"| a2 ---|"1,1"| CLASSE
+  ANNEE ---|"0,n"| a3 ---|"1,1"| GROUPE
+  GROUPE ---|"1,n"| a4 ---|"0,n"| CLASSE
+  CLASSE ---|"0,n"| a5 ---|"1,1"| MAT
+  GROUPE ---|"0,n"| a6 ---|"1,1"| MAT
+  UTIL ---|"0,n"| a7 ---|"0,1"| MAT
+  UTIL ---|"0,n"| a8 ---|"0,1"| CLASSE
+  ELEVE ---|"1,n"| a9 ---|"1,1"| INS
+  CLASSE ---|"0,n"| a10 ---|"1,1"| INS
+  INS ---|"0,n"| a11
+  MAT ---|"0,n"| a11
+  SEQ ---|"0,n"| a11
+  MAT ---|"0,n"| a12 ---|"0,n"| SEQ
+  INS ---|"0,n"| a13 ---|"1,1"| RENV
+  UTIL ---|"0,n"| a14 ---|"1,1"| RENV
+
+  classDef entite fill:#eef4fb,stroke:#1d5fa8,color:#14202e
+  classDef asso fill:#ffffff,stroke:#5b6b7d,color:#14202e
+  class ANNEE,SEQ,CLASSE,GROUPE,MAT,UTIL,ELEVE,INS,RENV entite
+  class a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13,a14 asso

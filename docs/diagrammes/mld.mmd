@@ -1,0 +1,106 @@
+%% MLD / schéma physique PostgreSQL : tables, clés primaires (PK), clés étrangères (FK), unicités (UK).
+erDiagram
+  ANNEE_SCOLAIRE ||--|{ SEQUENCE : compte
+  ANNEE_SCOLAIRE ||--o{ CLASSE : organise
+  ANNEE_SCOLAIRE ||--o{ GROUPE_MATIERE : definit
+  ANNEE_SCOLAIRE ||--o{ INSCRIPTION : regroupe
+  CLASSE ||--o{ CLASSE_GROUPE : rattache
+  GROUPE_MATIERE ||--o{ CLASSE_GROUPE : rattache
+  CLASSE ||--o{ MATIERE : propose
+  GROUPE_MATIERE ||--o{ MATIERE : range
+  UTILISATEUR |o--o{ MATIERE : enseigne
+  UTILISATEUR |o--o{ CLASSE : encadre
+  ELEVE ||--|{ INSCRIPTION : suit
+  CLASSE ||--o{ INSCRIPTION : accueille
+  INSCRIPTION ||--o{ NOTE : obtient
+  MATIERE ||--o{ NOTE : porte
+  SEQUENCE ||--o{ NOTE : date
+  UTILISATEUR ||--o{ NOTE : saisit
+  MATIERE ||--o{ COMPETENCE_VISEE : vise
+  SEQUENCE ||--o{ COMPETENCE_VISEE : date
+  INSCRIPTION ||--o{ RENVOI : concerne
+  UTILISATEUR ||--o{ RENVOI : decide
+
+  ANNEE_SCOLAIRE {
+    text id PK
+    text libelle UK
+    boolean active
+  }
+  SEQUENCE {
+    text id PK
+    text anneeId FK
+    int numero
+    int trimestre
+    boolean saisieOuverte
+  }
+  CLASSE {
+    text id PK
+    text anneeId FK
+    text nom
+    int niveau
+    text profPrincipalId FK
+  }
+  GROUPE_MATIERE {
+    text id PK
+    text anneeId FK
+    text nom
+    int ordre
+  }
+  CLASSE_GROUPE {
+    text classeId PK, FK
+    text groupeId PK, FK
+  }
+  MATIERE {
+    text id PK
+    text classeId FK
+    text groupeId FK
+    text nom
+    int coefficient
+    text professeurId FK
+  }
+  UTILISATEUR {
+    text id PK
+    text telephone UK
+    text email UK
+    text motDePasse
+    enum role
+    boolean actif
+  }
+  ELEVE {
+    text id PK
+    text matricule UK
+    text matriculeNational UK
+    text nom
+    text prenoms
+    enum sexe
+    date dateNaissance
+  }
+  INSCRIPTION {
+    text id PK
+    text eleveId FK
+    text anneeId FK
+    text classeId FK
+    boolean redoublant
+    enum statut
+  }
+  NOTE {
+    text id PK
+    text inscriptionId FK
+    text matiereId FK
+    text sequenceId FK
+    decimal valeur
+    text saisieParId FK
+  }
+  COMPETENCE_VISEE {
+    text matiereId PK, FK
+    text sequenceId PK, FK
+    text texte
+  }
+  RENVOI {
+    text id PK
+    text inscriptionId FK
+    date date
+    text motif
+    text parId FK
+    timestamp reintegreLe
+  }

@@ -1,0 +1,24 @@
+sequenceDiagram
+  autonumber
+  actor S as Surveillant Général
+  participant W as Application web
+  participant A as API (documents)
+  participant R as Service résultats
+  participant C as Calcul (module pur)
+  participant B as Base PostgreSQL
+  participant K as Stockage B2
+  S->>W: Choisit la période et les classes
+  W->>A: POST /documents/bulletins
+  loop pour chaque classe
+    A->>R: resultatsClasse(classe, période)
+    R->>B: matières, élèves actifs, notes, barèmes
+    R->>C: calculerResultats(...)
+    C-->>R: notes, totaux, rangs, moyennes, profil de classe
+    A->>R: sous-périodes (séquences du trimestre, trimestres de l'année)
+    A->>K: photos des élèves
+    loop pour chaque élève
+      A->>A: dessinerBulletin (une page A4)
+    end
+  end
+  A-->>W: un seul PDF
+  W-->>S: ouverture dans un onglet, prêt à imprimer
