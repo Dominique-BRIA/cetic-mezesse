@@ -7,7 +7,7 @@ import type { Annee, Role, Utilisateur } from './types';
 interface Contexte {
   utilisateur: Utilisateur | null;
   chargement: boolean;
-  connecter: (jeton: string, u: Utilisateur) => void;
+  connecter: (jeton: string, u: Utilisateur, persistant?: boolean) => void;
   deconnecter: () => void;
   rafraichirProfil: () => Promise<void>;
   a: (...roles: Role[]) => boolean;
@@ -63,8 +63,8 @@ export function FournisseurApp({ children }: { children: ReactNode }) {
   const valeur: Contexte = {
     utilisateur,
     chargement,
-    connecter: (jeton, u) => {
-      session.definirJeton(jeton);
+    connecter: (jeton, u, persistant = true) => {
+      session.definirJeton(jeton, persistant);
       client.clear();
       setUtilisateur(u);
     },

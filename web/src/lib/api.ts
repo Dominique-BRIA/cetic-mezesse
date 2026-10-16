@@ -22,14 +22,29 @@ function ecrireStockage(cle: string, valeur: string | null) {
   }
 }
 
-let jeton = lireStockage(CLE_JETON);
+// Jeton gardé dans localStorage (« rester connecté ») ou sessionStorage (effacé à la fermeture du navigateur).
+function lireSession(cle: string): string | null {
+  try {
+    return sessionStorage.getItem(cle);
+  } catch {
+    return null;
+  }
+}
+
+let jeton = lireStockage(CLE_JETON) ?? lireSession(CLE_JETON);
 let anneeId = lireStockage(CLE_ANNEE);
 
 export const session = {
   jeton: () => jeton,
-  definirJeton(j: string | null) {
+  definirJeton(j: string | null, persistant = true) {
     jeton = j;
-    ecrireStockage(CLE_JETON, j);
+    ecrireStockage(CLE_JETON, persistant ? j : null);
+    try {
+      if (j && !persistant) sessionStorage.setItem(CLE_JETON, j);
+      else sessionStorage.removeItem(CLE_JETON);
+    } catch {
+      // stockage de session indisponible
+    }
   },
   annee: () => anneeId,
   definirAnnee(id: string | null) {
