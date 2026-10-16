@@ -37,18 +37,9 @@ export function Connexion() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <MotifFond />
-      <div className="flex justify-end p-4">
-        <button type="button" className="bouton-secondaire" onClick={basculerTheme}>
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
-        </button>
-      </div>
-
-      <main className="flex flex-1 items-start justify-center px-3 pb-16 sm:px-4 sm:pt-[2vh]">
-        <div className="w-full max-w-[30rem] overflow-hidden rounded-lg border border-bord bg-surface shadow-feuille">
-          <div className="flex h-3" aria-hidden>
+    // Pleine page, sans carte : bandes sur toute la largeur, puis le formulaire sur le motif adouci.
+    <div className="flex min-h-screen flex-col bg-surface">
+          <div className="flex h-3 shrink-0" aria-hidden>
             <div className="flex-1" style={{ background: DRAPEAU[0] }} />
             <div className="flex flex-1 items-center justify-center" style={{ background: DRAPEAU[1] }}>
               <svg viewBox="0 0 10 10" className="h-2.5 w-2.5">
@@ -59,32 +50,45 @@ export function Connexion() {
           </div>
 
           {/* En-tête officiel bilingue : français à gauche, anglais à droite */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-bord bg-surface-2 px-4 py-3.5 sm:px-6">
-            <div className="text-[0.68rem] leading-snug text-encre-2 sm:text-xs">
+          <div className="border-b border-bord bg-surface-2">
+          <div className="mx-auto grid max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4 sm:px-8">
+            <div className="text-[0.68rem] leading-snug text-encre-2 sm:text-sm">
               <div className="font-bold uppercase tracking-wide text-encre">République du Cameroun</div>
               <div className="italic">Paix – Travail – Patrie</div>
               <div className="mt-0.5">MINESEC · DRES-Sud</div>
               <div>DDES Dja-et-Lobo</div>
             </div>
-            <img src="/logo.png" alt="Sceau du CETIC de Mezessé" className="h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]" />
-            <div className="text-right text-[0.68rem] leading-snug text-encre-2 sm:text-xs">
+            <img src="/logo.png" alt="Sceau du CETIC de Mezessé" className="h-16 w-16 sm:h-24 sm:w-24" />
+            <div className="text-right text-[0.68rem] leading-snug text-encre-2 sm:text-sm">
               <div className="font-bold uppercase tracking-wide text-encre">Republic of Cameroon</div>
               <div className="italic">Peace – Work – Fatherland</div>
               <div className="mt-0.5">MINSEC · South RDSE</div>
               <div>Dja and Lobo DDSE</div>
             </div>
           </div>
-
-          {/* Établissement */}
-          <div className="border-b border-bord px-5 py-4 text-center sm:px-7">
-            <div className="text-lg font-bold uppercase tracking-wide">CETIC de Mezessé</div>
-            <div className="text-sm text-encre-2">Collège d'Enseignement Technique Industriel et Commercial</div>
-            <div className="mt-0.5 text-xs font-semibold text-primaire">Gestion scolaire et pédagogique</div>
           </div>
 
-          {/* Formulaire */}
-          <form onSubmit={soumettre} className="px-5 pb-7 pt-6 sm:px-7">
-            <h1 className="text-xl font-bold">Connexion</h1>
+          {/* Établissement */}
+          <div className="relative border-b border-bord px-5 py-5 text-center">
+            <div className="text-xl font-bold uppercase tracking-wide sm:text-2xl">CETIC de Mezessé</div>
+            <div className="text-sm text-encre-2 sm:text-base">Collège d'Enseignement Technique Industriel et Commercial</div>
+            <div className="mt-0.5 text-xs font-semibold text-primaire sm:text-sm">Gestion scolaire et pédagogique</div>
+            <button
+              type="button"
+              className="bouton-discret absolute right-3 top-3 sm:right-6"
+              onClick={basculerTheme}
+              title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <span className="hidden md:inline">{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>
+            </button>
+          </div>
+
+          {/* Formulaire, sur le motif adouci pour rester lisible sans cadre */}
+          <main className="relative flex-1">
+          <MotifFond trait="rgb(var(--motif) / 0.22)" className="pointer-events-none absolute inset-0 h-full w-full" />
+          <form onSubmit={soumettre} className="relative mx-auto w-full max-w-md px-5 pb-12 pt-8 sm:pt-12">
+            <h1 className="text-2xl font-bold">Connexion</h1>
             <p className="mt-1 text-sm text-encre-2">Espace réservé aux enseignants et au personnel administratif.</p>
 
             <div className="mt-6 space-y-5">
@@ -151,8 +155,7 @@ export function Connexion() {
               Mot de passe oublié ? Adressez-vous au Surveillant Général.
             </p>
           </form>
-        </div>
-      </main>
+          </main>
     </div>
   );
 }
