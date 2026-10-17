@@ -284,6 +284,10 @@ class _Tiroir extends StatelessWidget {
               },
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 16, 10),
+            child: Text('Version $versionApp', style: TextStyle(fontSize: 11, color: c.encre3)),
+          ),
         ]),
       ),
     );

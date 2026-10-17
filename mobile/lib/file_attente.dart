@@ -56,9 +56,17 @@ class FileAttente extends ChangeNotifier {
   void charger() {
     final brut = Api.i.prefs.getString('file-attente');
     if (brut == null) return;
-    _envois
-      ..clear()
-      ..addAll((jsonDecode(brut) as List).map((e) => Envoi.depuisJson(e as Map<String, dynamic>)));
+    try {
+      _envois
+        ..clear()
+        ..addAll((jsonDecode(brut) as List).map((e) => Envoi.depuisJson(e as Map<String, dynamic>)));
+    } catch (e) {
+      // Copie abîmée : gardée à part pour ne rien perdre, puis la file repart vide.
+      debugPrint('File d’attente illisible : $e');
+      _envois.clear();
+      Api.i.prefs.setString('file-attente-illisible', brut);
+      Api.i.prefs.remove('file-attente');
+    }
     notifyListeners();
   }
 

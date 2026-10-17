@@ -199,6 +199,8 @@ class _EcranConnexionState extends State<EcranConnexion> {
                         const SizedBox(height: 8),
                         Text('Mot de passe oublié ? Adressez-vous au Surveillant Général.',
                             textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: c.encre2)),
+                        const SizedBox(height: 10),
+                        Text('Version $versionApp', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: c.encre3)),
                       ]),
                     ),
                   ),

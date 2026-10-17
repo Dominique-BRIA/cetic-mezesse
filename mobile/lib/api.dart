@@ -19,6 +19,9 @@ class ErreurApi implements Exception {
   String toString() => message;
 }
 
+/// Code du commit de l'APK, fourni par le workflow GitHub (« locale » pour une construction à la main).
+const versionApp = String.fromEnvironment('VERSION', defaultValue: 'locale');
+
 class Api {
   Api._();
   static final Api i = Api._();

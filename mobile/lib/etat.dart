@@ -42,42 +42,54 @@ class Etat extends ChangeNotifier {
     return null;
   }
 
+  /// Aboutit toujours : une donnée locale illisible ne doit pas laisser l'écran d'ouverture
+  /// tourner sans fin. Dans le pire des cas, on revient à l'écran de connexion.
   Future<void> demarrer() async {
-    await Api.i.initialiser();
-    FileAttente.i.charger();
-    theme = switch (Api.i.prefs.getString('theme')) {
-      'dark' => ThemeMode.dark,
-      'light' => ThemeMode.light,
-      _ => ThemeMode.system,
-    };
-    Api.i.surSessionExpiree = deconnecter;
-    Api.i.surRetourReseau = () {
-      FileAttente.i.synchroniser();
-      _rafraichir();
-    };
-    // Jamais d'attente du serveur à l'ouverture : la session reprend avec le profil et les
-    // années gardés sur le téléphone, puis se met à jour en arrière-plan.
-    if (Api.i.jeton != null) {
-      final profil = _profilGarde();
-      if (profil != null) {
-        utilisateur = profil;
-        final copieAnnees = Api.i.lireCache('/annees', annee: false);
-        if (copieAnnees is List) annees = copieAnnees.cast<Map<String, dynamic>>();
-      } else {
-        // Session ouverte par une version qui ne gardait pas le profil : on redemande la connexion.
-        await deconnecter();
+    try {
+      await Api.i.initialiser();
+      Api.i.surSessionExpiree = deconnecter;
+      Api.i.surRetourReseau = () {
+        FileAttente.i.synchroniser();
+        _rafraichir();
+      };
+      theme = switch (Api.i.prefs.getString('theme')) {
+        'dark' => ThemeMode.dark,
+        'light' => ThemeMode.light,
+        _ => ThemeMode.system,
+      };
+      FileAttente.i.charger();
+      // Jamais d'attente du serveur à l'ouverture : la session reprend avec le profil et les
+      // années gardés sur le téléphone, puis se met à jour en arrière-plan.
+      if (Api.i.jeton != null) {
+        final profil = _profilGarde();
+        if (profil != null) {
+          utilisateur = profil;
+          final copieAnnees = Api.i.lireCache('/annees', annee: false);
+          if (copieAnnees is List) annees = copieAnnees.cast<Map<String, dynamic>>();
+        } else {
+          // Session ouverte par une version qui ne gardait pas le profil : on redemande la connexion.
+          await deconnecter();
+        }
       }
+    } catch (e, pile) {
+      debugPrint('Démarrage interrompu : $e\n$pile');
+      utilisateur = null;
+    } finally {
+      demarrage = false;
+      notifyListeners();
     }
-    demarrage = false;
-    notifyListeners();
     if (utilisateur != null) unawaited(_rafraichir());
   }
 
   Map<String, dynamic>? _profilGarde() {
-    final brut = Api.i.prefs.getString('profil');
-    if (brut != null) return (jsonDecode(brut) as Map).cast<String, dynamic>();
-    final copie = Api.i.lireCache('/auth/moi', annee: false);
-    return copie is Map ? copie.cast<String, dynamic>() : null;
+    try {
+      final brut = Api.i.prefs.getString('profil');
+      if (brut != null) return (jsonDecode(brut) as Map).cast<String, dynamic>();
+      final copie = Api.i.lireCache('/auth/moi', annee: false);
+      return copie is Map ? copie.cast<String, dynamic>() : null;
+    } catch (_) {
+      return null; // copie illisible : la connexion sera redemandée
+    }
   }
 
   Future<void> _garderProfil() async {

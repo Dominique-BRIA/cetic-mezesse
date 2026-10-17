@@ -44,8 +44,10 @@ jobs:
           } > android/key.properties
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      # Le démarrage ne doit jamais rester bloqué (test/demarrage_test.dart).
+      - run: flutter test
       # L'adresse de l'API se règle dans Settings > Secrets and variables > Actions > Variables (API_URL)
-      - run: flutter build apk --release --dart-define=API_URL=${{ vars.API_URL || 'https://cetic-mezesse-api-dgfxfucegjg8gscb.francecentral-01.azurewebsites.net/api' }}
+      - run: flutter build apk --release --dart-define=VERSION=${GITHUB_SHA::7} --dart-define=API_URL=${{ vars.API_URL || 'https://cetic-mezesse-api-dgfxfucegjg8gscb.francecentral-01.azurewebsites.net/api' }}
       # Refuse un APK signé avec la clé de débogage.
       - name: Vérification de la signature
         run: |
