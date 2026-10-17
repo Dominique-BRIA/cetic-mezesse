@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +21,10 @@ class ErreurApi implements Exception {
   @override
   String toString() => message;
 }
+
+/// Type d'une photo d'après son extension (le serveur n'accepte que JPEG et PNG).
+MediaType typeImage(String chemin) =>
+    chemin.toLowerCase().endsWith('.png') ? MediaType('image', 'png') : MediaType('image', 'jpeg');
 
 /// Code du commit de l'APK, fourni par le workflow GitHub (« locale » pour une construction à la main).
 const versionApp = String.fromEnvironment('VERSION', defaultValue: 'locale');
@@ -157,7 +162,19 @@ class Api {
     final req = http.MultipartRequest('POST', _uri(chemin))
       ..headers.addAll(_entetes())
       ..fields.addAll(champs)
-      ..files.add(await http.MultipartFile.fromPath(champ, fichier.path));
+      ..files.add(await http.MultipartFile.fromPath(champ, fichier.path, contentType: typeImage(fichier.path)));
+    final r = await _executer(() async => http.Response.fromStream(await req.send()), quoi: '${req.method} ${req.url.path}');
+    return jsonDecode(utf8.decode(r.bodyBytes));
+  }
+
+  /// Formulaire avec plusieurs fichiers (photos d'une saisie groupée) : champs texte + fichiers par nom de champ.
+  Future<dynamic> envoyerFormulaire(String chemin, {Map<String, String> champs = const {}, Map<String, File> fichiers = const {}, bool annee = true}) async {
+    final req = http.MultipartRequest('POST', _uri(chemin, annee: annee))
+      ..headers.addAll(_entetes())
+      ..fields.addAll(champs);
+    for (final f in fichiers.entries) {
+      req.files.add(await http.MultipartFile.fromPath(f.key, f.value.path, contentType: typeImage(f.value.path)));
+    }
     final r = await _executer(() async => http.Response.fromStream(await req.send()), quoi: '${req.method} ${req.url.path}');
     return jsonDecode(utf8.decode(r.bodyBytes));
   }

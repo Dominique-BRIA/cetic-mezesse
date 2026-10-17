@@ -9,6 +9,7 @@ import '../etat.dart';
 import '../format.dart';
 import '../theme.dart';
 import '../widgets.dart';
+import 'saisie_eleves.dart';
 
 class EcranEleves extends StatefulWidget {
   const EcranEleves({super.key});
@@ -33,11 +34,11 @@ class _EcranElevesState extends State<EcranEleves> {
               : FloatingActionButton.extended(
                   onPressed: () async {
                     final ok = await Navigator.push<bool>(
-                        context, MaterialPageRoute(builder: (_) => FormEleve(classes: classes, classeParDefaut: _classe.isEmpty ? null : _classe)));
+                        context, MaterialPageRoute(builder: (_) => EcranAjoutEleves(classes: classes, classeParDefaut: _classe.isEmpty ? null : _classe)));
                     if (ok == true) setState(() => _version++);
                   },
-                  icon: const Icon(Icons.person_add_alt),
-                  label: const Text('Nouvel élève'),
+                  icon: const Icon(Icons.group_add_outlined),
+                  label: const Text('Ajouter des élèves'),
                 ),
           body: Column(children: [
             Padding(
@@ -57,9 +58,18 @@ class _EcranElevesState extends State<EcranEleves> {
                       decoration: const InputDecoration(labelText: 'Rechercher', hintText: 'Nom, prénom ou matricule', prefixIcon: Icon(Icons.search)),
                       onSubmitted: (v) => setState(() => _recherche = v.trim()),
                     ),
-                    if (_classe.isNotEmpty || Etat.i.estSG) ...[
+                    ...[
                       const SizedBox(height: 8),
                       Wrap(spacing: 8, children: [
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                          label: const Text('Photos'),
+                          onPressed: () async {
+                            final ok = await Navigator.push<bool>(
+                                context, MaterialPageRoute(builder: (_) => EcranPhotosClasse(classes: classes, classeParDefaut: _classe.isEmpty ? null : _classe)));
+                            if (ok == true) setState(() => _version++);
+                          },
+                        ),
                         if (_classe.isNotEmpty) ...[
                           OutlinedButton.icon(
                             icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),

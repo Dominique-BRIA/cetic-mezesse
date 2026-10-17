@@ -54,7 +54,8 @@ export const session = {
 };
 
 export class ErreurApi extends Error {
-  constructor(public statut: number, message: string) {
+  // details : le corps JSON de la réponse (par exemple les erreurs ligne par ligne d'une saisie groupée).
+  constructor(public statut: number, message: string, public details?: unknown) {
     super(message);
   }
 }
@@ -77,13 +78,15 @@ async function traiter(r: Response) {
   }
   if (!r.ok) {
     let message = `Erreur ${r.status}`;
+    let details: unknown;
     try {
-      const j = await r.json();
+      details = await r.json();
+      const j = details as { message?: string } | null;
       if (j?.message) message = j.message;
     } catch {
       // réponse sans JSON
     }
-    throw new ErreurApi(r.status, message);
+    throw new ErreurApi(r.status, message, details);
   }
 }
 

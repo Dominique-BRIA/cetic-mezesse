@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Download, FileSpreadsheet, FileText, Loader2, Plus, Search, Upload } from 'lucide-react';
+import { Camera, Download, FileSpreadsheet, FileText, Loader2, Plus, Search, Upload } from 'lucide-react';
 import { api, telecharger } from '../../lib/api';
 import { useApp } from '../../lib/contexte';
 import { date } from '../../lib/format';
 import type { Classe, Inscription } from '../../lib/types';
 import { Carte, Chargement, Champ, Erreur, Modale, Page, Vide } from '../../components/ui';
-import { FormEleve } from './FormEleve';
+import { AjoutEleves } from './AjoutEleves';
+import { PhotosEleves } from './PhotosEleves';
 
 export default function Eleves() {
   const { a, annee } = useApp();
@@ -17,6 +18,7 @@ export default function Eleves() {
   const [recherche, setRecherche] = useState('');
   const [creation, setCreation] = useState(false);
   const [import_, setImport] = useState(false);
+  const [photos, setPhotos] = useState(false);
 
   const classes = useQuery({ queryKey: ['classes', annee?.id], queryFn: () => api<Classe[]>('/classes') });
   const eleves = useQuery({
@@ -33,13 +35,16 @@ export default function Eleves() {
       description={`Élèves inscrits en ${annee?.libelle ?? ''}. Les élèves renvoyés n'apparaissent pas ici.`}
       actions={
         <>
+          <button type="button" className="bouton-secondaire" onClick={() => setPhotos(true)} disabled={!classes.data?.length}>
+            <Camera className="h-4 w-4" /> Photos
+          </button>
           {a('SURVEILLANT_GENERAL') && (
             <button type="button" className="bouton-secondaire" onClick={() => setImport(true)}>
               <Upload className="h-4 w-4" /> Importer
             </button>
           )}
           <button type="button" className="bouton-primaire" onClick={() => setCreation(true)} disabled={!classes.data?.length}>
-            <Plus className="h-4 w-4" /> Nouvel élève
+            <Plus className="h-4 w-4" /> Ajouter des élèves
           </button>
         </>
       }
@@ -127,9 +132,10 @@ export default function Eleves() {
       </Carte>
 
       {creation && classes.data && (
-        <FormEleve ouverte fermer={() => setCreation(false)} classes={classes.data} classeParDefaut={classeId || undefined} />
+        <AjoutEleves fermer={() => setCreation(false)} classes={classes.data} classeParDefaut={classeId} />
       )}
       {import_ && classes.data && <ImportEleves fermer={() => setImport(false)} classes={classes.data} classeParDefaut={classeId} />}
+      {photos && classes.data && <PhotosEleves fermer={() => setPhotos(false)} classes={classes.data} classeParDefaut={classeId} />}
     </Page>
   );
 }

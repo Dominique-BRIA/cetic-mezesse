@@ -4,6 +4,7 @@ import '../api.dart';
 import '../theme.dart';
 import '../widgets.dart';
 import 'eleves.dart';
+import 'saisie_eleves.dart';
 import 'selection.dart';
 
 // Cartes d'identité scolaires (RG-31) : la photo est obligatoire, les élèves sans photo sont écartés.
@@ -79,8 +80,26 @@ class _EcranCartesState extends State<EcranCartes> {
                 enfant: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-                    child: Text("Leur carte ne sera pas imprimée. Ajoutez la photo depuis leur fiche, puis revenez ici.",
+                    child: Text("Leur carte ne sera pas imprimée. Ajoutez les photos, puis revenez ici.",
                         style: TextStyle(color: context.c.alerte, fontWeight: FontWeight.w600)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                      label: const Text('Ajouter les photos manquantes'),
+                      onPressed: () async {
+                        final classe = classes.where((c) => c['nom'] == sansPhoto.first['classe']).firstOrNull;
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => EcranPhotosClasse(classes: classes, classeParDefaut: classe?['id'] as String?, sansPhotoParDefaut: true),
+                          ),
+                        );
+                        _verifiee = '';
+                        _verifier();
+                      },
+                    ),
                   ),
                   for (final e in sansPhoto)
                     ListTile(

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { randomUUID } from 'node:crypto';
 import multer from 'multer';
 import ExcelJS from 'exceljs';
 import { z } from 'zod';
@@ -9,7 +10,7 @@ import { anneeDe } from '../lib/annee';
 import { texte, texteOptionnel } from '../lib/validation';
 import { conflit, introuvable, invalide } from '../lib/erreurs';
 import { nouveauMatricule } from '../lib/matricule';
-import { deposer, lire } from '../lib/stockage';
+import { deposer, lire, supprimer } from '../lib/stockage';
 import { consigner } from '../lib/decisions';
 
 export const eleves = Router();
@@ -142,6 +143,141 @@ eleves.post('/', roles(...DIRECTION), async (req, res) => {
     return e;
   });
   res.status(201).json(cree);
+});
+
+// Saisie groupée : plusieurs élèves d'une même classe, enregistrés d'un coup. Tout ou rien,
+// comme l'import : une seule ligne invalide et rien n'est enregistré, avec l'erreur de chaque ligne.
+const LIBELLES: Record<string, string> = {
+  nom: 'nom',
+  prenoms: 'prénoms',
+  sexe: 'sexe',
+  dateNaissance: 'date de naissance',
+  lieuNaissance: 'lieu de naissance',
+  matriculeNational: 'matricule national',
+  parentNom: 'parent',
+  parentTelephone: 'téléphone du parent',
+  parentAdresse: 'adresse du parent',
+};
+const ligneSaisie = z.object({
+  ...champsEleve,
+  sexe: z.enum(['M', 'F'], { message: 'à choisir' }),
+  dateNaissance: z.coerce.date({ message: 'invalide' }),
+  redoublant: z.boolean().default(false),
+});
+
+// Photos envoyées avec un formulaire groupé : champ « photo_<clé> » → fichier.
+const envoiGroupe = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024, files: 200 } });
+const TYPES_PHOTO = ['image/jpeg', 'image/png'];
+
+function photosRecues(req: Express.Request): Map<string, Express.Multer.File> {
+  const fichiers = (Array.isArray(req.files) ? req.files : []) as Express.Multer.File[];
+  return new Map(fichiers.filter((f) => f.fieldname.startsWith('photo_')).map((f) => [f.fieldname.slice(6), f]));
+}
+
+async function deposerPhoto(f: Express.Multer.File, prefixe: string): Promise<string> {
+  const cle = `eleves/${prefixe}-${randomUUID()}.${f.mimetype === 'image/png' ? 'png' : 'jpg'}`;
+  await deposer(cle, f.buffer, f.mimetype);
+  return cle;
+}
+
+// Accepte du JSON, ou un formulaire multipart (champ « donnees » en JSON, photos « photo_<n° de ligne - 1> »).
+eleves.post('/lot', roles(...DIRECTION), envoiGroupe.any(), async (req, res) => {
+  const corps = typeof req.body?.donnees === 'string' ? JSON.parse(req.body.donnees) : req.body;
+  const { classeId, eleves: lignes } = z
+    .object({ classeId: z.string().min(1, 'classe obligatoire'), eleves: z.array(z.unknown()).min(1, 'aucun élève à enregistrer').max(200) })
+    .parse(corps);
+  const photos = photosRecues(req);
+  const erreurs: { ligne: number; message: string }[] = [];
+  const valides: (z.infer<typeof ligneSaisie> & { photo?: Express.Multer.File })[] = [];
+  lignes.forEach((l, i) => {
+    const r = ligneSaisie.safeParse(l);
+    const photo = photos.get(String(i));
+    const problemes = r.success ? [] : [...new Set(r.error.issues.map((x) => `${LIBELLES[String(x.path[0])] ?? String(x.path[0])} ${x.message}`))];
+    if (photo && !TYPES_PHOTO.includes(photo.mimetype)) problemes.push('photo en JPEG ou PNG uniquement');
+    if (problemes.length) erreurs.push({ ligne: i + 1, message: problemes.join(', ') });
+    else if (r.success) valides.push({ ...r.data, photo });
+  });
+  if (erreurs.length) {
+    res.status(400).json({
+      message: `Rien n'a été enregistré : ${erreurs.length} ligne(s) à corriger.\n${erreurs
+        .slice(0, 10)
+        .map((e) => `Ligne ${e.ligne} : ${e.message}`)
+        .join('\n')}`,
+      erreurs,
+    });
+    return;
+  }
+  const anneeId = await anneeDe(req);
+  // Les photos sont déposées avant la transaction ; elles sont retirées si l'inscription échoue.
+  const cles = await Promise.all(valides.map((v) => (v.photo ? deposerPhoto(v.photo, 'inscription') : Promise.resolve(null))));
+  const crees = await prisma.$transaction(
+    async (tx) => {
+      const { annee, prefixe, classe } = await contexte(tx, anneeId, classeId);
+      const liste = [];
+      for (const [k, { redoublant, photo: _, ...data }] of valides.entries()) {
+        const matricule = await nouveauMatricule(tx, prefixe, annee.libelle);
+        liste.push(
+          await tx.eleve.create({
+            data: { ...data, matricule, photoCle: cles[k], inscriptions: { create: { anneeId, classeId, redoublant } } },
+          }),
+        );
+      }
+      const noms = liste.map((e) => `${e.nom} ${e.prenoms}`);
+      await consigner(
+        req,
+        {
+          domaine: 'SCOLARITE',
+          action: 'eleve.ajouter',
+          annulation: { eleveIds: liste.map((e) => e.id) },
+          libelle: `Inscription de ${liste.length} élève(s) en ${classe.nom} : ${noms.slice(0, 8).join(', ')}${noms.length > 8 ? '…' : ''}`,
+          lien: `/eleves?classe=${classeId}`,
+        },
+        tx,
+      );
+      return liste;
+    },
+    { timeout: 60_000 },
+  ).catch(async (e) => {
+    await Promise.all(cles.filter((c): c is string => Boolean(c)).map((c) => supprimer(c).catch(() => undefined)));
+    throw e;
+  });
+  const avecPhoto = cles.filter(Boolean).length;
+  res.status(201).json({
+    message: `${crees.length} élève(s) inscrit(s)${avecPhoto ? `, dont ${avecPhoto} avec photo` : ''}.`,
+    nombre: crees.length,
+    eleves: crees,
+  });
+});
+
+// Photos de plusieurs élèves d'un coup : champs « photo_<id de l'élève> ». Tout ou rien.
+eleves.post('/photos', roles(...DIRECTION), envoiGroupe.any(), async (req, res) => {
+  const photos = photosRecues(req);
+  if (!photos.size) throw invalide('Aucune photo reçue.');
+  const trouves = await prisma.eleve.findMany({ where: { id: { in: [...photos.keys()] } } });
+  const inconnus = [...photos.keys()].filter((id) => !trouves.some((e) => e.id === id));
+  if (inconnus.length) throw invalide(`${inconnus.length} élève(s) introuvable(s) : rechargez la page.`);
+  const mauvais = trouves.filter((e) => !TYPES_PHOTO.includes(photos.get(e.id)!.mimetype));
+  if (mauvais.length) {
+    throw invalide(`Photos en JPEG ou PNG uniquement : ${mauvais.map((e) => `${e.nom} ${e.prenoms}`).join(', ')}.`);
+  }
+  // Les anciennes photos sont gardées : une désapprobation peut les remettre.
+  const nouvelles = await Promise.all(trouves.map(async (e) => ({ e, cle: await deposerPhoto(photos.get(e.id)!, e.id) })));
+  await prisma.$transaction(async (tx) => {
+    for (const { e, cle } of nouvelles) await tx.eleve.update({ where: { id: e.id }, data: { photoCle: cle } });
+    const noms = trouves.map((e) => `${e.nom} ${e.prenoms}`);
+    await consigner(
+      req,
+      {
+        domaine: 'SCOLARITE',
+        action: 'eleve.photos',
+        annulation: { photos: nouvelles.map(({ e, cle }) => ({ eleveId: e.id, avantCle: e.photoCle, apresCle: cle })) },
+        libelle: `Photos de ${noms.length} élève(s) : ${noms.slice(0, 8).join(', ')}${noms.length > 8 ? '…' : ''}`,
+        lien: nouvelles.length === 1 ? `/eleves/${nouvelles[0].e.id}` : null,
+      },
+      tx,
+    );
+  });
+  res.json({ message: `${nouvelles.length} photo(s) enregistrée(s).`, nombre: nouvelles.length });
 });
 
 async function contexte(tx: Prisma.TransactionClient, anneeId: string, classeId: string) {

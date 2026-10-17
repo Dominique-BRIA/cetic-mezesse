@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { IdCard, Loader2 } from 'lucide-react';
+import { Camera, IdCard, Loader2 } from 'lucide-react';
 import { api, telecharger } from '../../lib/api';
 import { Carte, Erreur, Etat, Page } from '../../components/ui';
 import { ChoixEleves, ModeSelection, useSelectionEleves } from '../../components/SelectionEleves';
+import { PhotosEleves } from './PhotosEleves';
 
 interface Verification {
   total: number;
@@ -14,6 +16,7 @@ interface Verification {
 // Cartes d'identité scolaires (RG-31) : la photo est obligatoire, les élèves sans photo sont écartés.
 export default function Cartes() {
   const sel = useSelectionEleves();
+  const [photos, setPhotos] = useState(false);
   const verification = useQuery({
     queryKey: ['cartes-verification', sel.corps],
     queryFn: () => api<Verification>('/documents/cartes/verification', { methode: 'POST', corps: sel.corps }),
@@ -52,7 +55,12 @@ export default function Cartes() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-1.5 text-xs text-encre-2">Ajoutez la photo depuis la fiche de l'élève, puis revenez ici.</p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <button type="button" className="bouton-secondaire py-1.5" onClick={() => setPhotos(true)}>
+                  <Camera className="h-4 w-4" /> Ajouter les photos manquantes
+                </button>
+                <span className="text-xs text-encre-2">ou depuis la fiche de chaque élève.</span>
+              </div>
             </div>
           )}
           {v && v.total > 0 && v.sansPhoto.length === 0 && <Etat ton="succes">Tous les élèves choisis ont une photo.</Etat>}
@@ -80,6 +88,17 @@ export default function Cartes() {
           </div>
         </div>
       </Carte>
+      {photos && sel.classes.data && (
+        <PhotosEleves
+          classes={sel.classes.data}
+          classeParDefaut={sel.classes.data.find((c) => c.nom === v?.sansPhoto[0]?.classe)?.id ?? ''}
+          sansPhotoParDefaut
+          fermer={() => {
+            setPhotos(false);
+            verification.refetch();
+          }}
+        />
+      )}
     </Page>
   );
 }

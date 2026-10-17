@@ -33,7 +33,9 @@ export const EFFETS: Record<string, string> = {
   'eleve.inscrire': "L'élève sera retiré de la plateforme.",
   'eleve.modifier': 'La fiche de l’élève reprendra ses valeurs précédentes.',
   'eleve.photo': "L'ancienne photo sera remise.",
+  'eleve.photos': 'Les photos précédentes seront remises.',
   'eleve.importer': 'Les élèves importés seront retirés de la plateforme.',
+  'eleve.ajouter': 'Les élèves inscrits ensemble seront retirés de la plateforme.',
   'eleve.reinscrire': 'Ces réinscriptions seront retirées.',
   'annee.creer': "L'année scolaire sera supprimée.",
   'annee.activer': "L'année qui était en cours le redeviendra.",
@@ -317,13 +319,28 @@ export async function annuler(tx: Tx, action: string, a: Valeurs): Promise<Resul
       await tx.eleve.update({ where: { id: e.id }, data: { photoCle: (a.avantCle as string | null) ?? null } });
       return { effet: `La photo précédente de ${e.nom} ${e.prenoms} a été remise.`, fichiersASupprimer: [a.apresCle as string] };
     }
-    case 'eleve.importer': {
+    case 'eleve.photos': {
+      const photos = a.photos as { eleveId: string; avantCle: string | null; apresCle: string }[];
+      const fichiers: string[] = [];
+      for (const ph of photos) {
+        const e = await tx.eleve.findUnique({ where: { id: ph.eleveId }, select: { photoCle: true } });
+        if (!e || e.photoCle !== ph.apresCle) continue; // élève retiré ou photo changée depuis
+        await tx.eleve.update({ where: { id: ph.eleveId }, data: { photoCle: ph.avantCle } });
+        fichiers.push(ph.apresCle);
+      }
+      return {
+        effet: fichiers.length ? `${fichiers.length} photo(s) précédente(s) remise(s).` : 'Les photos ont été changées depuis : rien à défaire.',
+        fichiersASupprimer: fichiers,
+      };
+    }
+    case 'eleve.importer':
+    case 'eleve.ajouter': {
       const ids = a.eleveIds as string[];
       const notes = await tx.note.count({ where: { inscription: { eleveId: { in: ids } } } });
       if (notes) throw conflit(`Des élèves importés ont déjà ${notes} note(s) : l'import ne peut plus être défait automatiquement.`);
       const photos = await tx.eleve.findMany({ where: { id: { in: ids }, photoCle: { not: null } }, select: { photoCle: true } });
       const { count } = await tx.eleve.deleteMany({ where: { id: { in: ids } } });
-      return { effet: `${count} élève(s) importé(s) ont été retirés.`, fichiersASupprimer: photos.map((p) => p.photoCle!) };
+      return { effet: `${count} élève(s) ont été retirés de la plateforme.`, fichiersASupprimer: photos.map((p) => p.photoCle!) };
     }
     case 'eleve.reinscrire': {
       const ids = a.inscriptionIds as string[];

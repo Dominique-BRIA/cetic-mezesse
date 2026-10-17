@@ -122,7 +122,7 @@ export function Modale({
   fermer: () => void;
   children: ReactNode;
   pied?: ReactNode;
-  large?: boolean;
+  large?: boolean | 'tres';
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -141,7 +141,7 @@ export function Modale({
       }}
       className={clsx(
         'w-[calc(100%-2rem)] rounded-lg border border-bord bg-surface p-0 text-encre shadow-feuille backdrop:bg-[rgb(10_20_32/0.45)]',
-        large ? 'max-w-3xl' : 'max-w-lg',
+        large === 'tres' ? 'max-w-6xl' : large ? 'max-w-3xl' : 'max-w-lg',
       )}
     >
       {ouverte && (
