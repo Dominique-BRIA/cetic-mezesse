@@ -1,5 +1,6 @@
 // État de l'application : utilisateur connecté, années scolaires, thème.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
@@ -54,28 +55,33 @@ class Etat extends ChangeNotifier {
       FileAttente.i.synchroniser();
       _rafraichir();
     };
+    // Jamais d'attente du serveur à l'ouverture : la session reprend avec le profil et les
+    // années gardés sur le téléphone, puis se met à jour en arrière-plan.
     if (Api.i.jeton != null) {
-      // Hors ligne d'abord : la session reprend avec le profil et les années gardés sur le
-      // téléphone, sans attendre le serveur ; la mise à jour se fait ensuite en arrière-plan.
-      final profil = Api.i.lireCache('/auth/moi', annee: false);
-      final copieAnnees = Api.i.lireCache('/annees', annee: false);
-      if (profil is Map) {
-        utilisateur = profil.cast<String, dynamic>();
+      final profil = _profilGarde();
+      if (profil != null) {
+        utilisateur = profil;
+        final copieAnnees = Api.i.lireCache('/annees', annee: false);
         if (copieAnnees is List) annees = copieAnnees.cast<Map<String, dynamic>>();
-        unawaited(_rafraichir());
       } else {
-        // Aucune copie (première ouverture après une mise à jour) : on attend le serveur une fois.
-        try {
-          utilisateur = (await Api.i.get('/auth/moi', annee: false) as Map).cast<String, dynamic>();
-          await chargerAnnees();
-          FileAttente.i.synchroniser();
-        } on ErreurApi catch (e) {
-          if (!e.horsLigne) await deconnecter();
-        }
+        // Session ouverte par une version qui ne gardait pas le profil : on redemande la connexion.
+        await deconnecter();
       }
     }
     demarrage = false;
     notifyListeners();
+    if (utilisateur != null) unawaited(_rafraichir());
+  }
+
+  Map<String, dynamic>? _profilGarde() {
+    final brut = Api.i.prefs.getString('profil');
+    if (brut != null) return (jsonDecode(brut) as Map).cast<String, dynamic>();
+    final copie = Api.i.lireCache('/auth/moi', annee: false);
+    return copie is Map ? copie.cast<String, dynamic>() : null;
+  }
+
+  Future<void> _garderProfil() async {
+    if (utilisateur != null) await Api.i.prefs.setString('profil', jsonEncode(utilisateur));
   }
 
   /// Met à jour le profil et les années depuis le serveur, sans bloquer l'interface.
@@ -83,6 +89,7 @@ class Etat extends ChangeNotifier {
     if (Api.i.jeton == null) return;
     try {
       utilisateur = (await Api.i.get('/auth/moi', annee: false) as Map).cast<String, dynamic>();
+      await _garderProfil();
       await chargerAnnees();
       FileAttente.i.synchroniser();
       notifyListeners();
@@ -110,18 +117,22 @@ class Etat extends ChangeNotifier {
       await Api.i.prefs.remove('jeton');
     }
     utilisateur = u;
-    await chargerAnnees();
+    await _garderProfil();
     notifyListeners();
+    // Les années arrivent en arrière-plan : l'accueil s'ouvre sans les attendre.
+    unawaited(chargerAnnees().catchError((_) {}));
   }
 
   Future<void> rafraichirProfil() async {
     utilisateur = (await Api.i.get('/auth/moi', annee: false) as Map).cast<String, dynamic>();
+    await _garderProfil();
     notifyListeners();
   }
 
   Future<void> deconnecter() async {
     Api.i.jeton = null;
     await Api.i.prefs.remove('jeton');
+    await Api.i.prefs.remove('profil');
     // La copie locale appartient au compte qui se déconnecte.
     for (final k in Api.i.prefs.getKeys().where((k) => k.startsWith('cache:')).toList()) {
       await Api.i.prefs.remove(k);
