@@ -253,11 +253,16 @@ class _EcranMotDePasseState extends State<EcranMotDePasse> {
   Widget build(BuildContext context) {
     final formulaire = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       if (_erreur != null) ...[MessageErreur(_erreur!), const SizedBox(height: 12)],
-      TextField(controller: _ancien, obscureText: true, decoration: const InputDecoration(labelText: 'Mot de passe actuel')),
+      ChampMotDePasse(controleur: _ancien, libelle: 'Mot de passe actuel'),
       const SizedBox(height: 12),
-      TextField(controller: _nouveau, obscureText: true, decoration: const InputDecoration(labelText: 'Nouveau mot de passe', helperText: '8 caractères au moins')),
+      ChampMotDePasse(controleur: _nouveau, libelle: 'Nouveau mot de passe', aide: '8 caractères au moins', onChanged: (_) => setState(() {})),
       const SizedBox(height: 12),
-      TextField(controller: _confirmation, obscureText: true, decoration: const InputDecoration(labelText: 'Confirmez le nouveau mot de passe')),
+      ChampMotDePasse(
+        controleur: _confirmation,
+        libelle: 'Confirmez le nouveau mot de passe',
+        aide: _confirmation.text.isNotEmpty && _confirmation.text != _nouveau.text ? 'Les deux mots de passe ne correspondent pas.' : null,
+        onChanged: (_) => setState(() {}),
+      ),
       const SizedBox(height: 18),
       FilledButton(onPressed: _envoi ? null : _enregistrer, child: const Text('Enregistrer')),
       if (widget.obligatoire) TextButton(onPressed: Etat.i.deconnecter, child: const Text('Se déconnecter')),

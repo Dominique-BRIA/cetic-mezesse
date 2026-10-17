@@ -100,13 +100,10 @@ class _EcranProfilState extends State<EcranProfil> {
               ],
               if (_identifiantChange) ...[
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _motDePasse,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Mot de passe actuel',
-                    helperText: "Obligatoire pour changer de téléphone ou d'e-mail.",
-                  ),
+                ChampMotDePasse(
+                  controleur: _motDePasse,
+                  libelle: 'Mot de passe actuel',
+                  aide: "Obligatoire pour changer de téléphone ou d'e-mail.",
                 ),
               ],
               const SizedBox(height: 16),

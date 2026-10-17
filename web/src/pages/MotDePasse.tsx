@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { useApp } from '../lib/contexte';
 import { MotifFond } from '../components/MotifFond';
 import { Marque } from '../components/Marque';
-import { Champ, Erreur, Page } from '../components/ui';
+import { Champ, ChampMotDePasse, Erreur, Page } from '../components/ui';
 
 export function MotDePasse({ obligatoire }: { obligatoire?: boolean }) {
   const { rafraichirProfil, deconnecter } = useApp();
@@ -41,13 +41,20 @@ export function MotDePasse({ obligatoire }: { obligatoire?: boolean }) {
     <form onSubmit={soumettre} className="max-w-sm space-y-4">
       {erreur ? <Erreur erreur={erreur} /> : null}
       <Champ libelle="Mot de passe actuel">
-        <input className="champ" type="password" autoComplete="current-password" value={ancien} onChange={(e) => setAncien(e.target.value)} required />
+        <ChampMotDePasse autoComplete="current-password" valeur={ancien} changer={setAncien} required />
       </Champ>
       <Champ libelle="Nouveau mot de passe" aide="8 caractères au moins.">
-        <input className="champ" type="password" autoComplete="new-password" minLength={8} value={nouveau} onChange={(e) => setNouveau(e.target.value)} required />
+        <ChampMotDePasse autoComplete="new-password" minLength={8} valeur={nouveau} changer={setNouveau} required />
       </Champ>
-      <Champ libelle="Confirmez le nouveau mot de passe">
-        <input className="champ" type="password" autoComplete="new-password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} required />
+      <Champ
+        libelle="Confirmez le nouveau mot de passe"
+        aide={
+          confirmation && confirmation !== nouveau ? (
+            <span className="text-danger">Les deux mots de passe ne correspondent pas.</span>
+          ) : undefined
+        }
+      >
+        <ChampMotDePasse autoComplete="new-password" valeur={confirmation} changer={setConfirmation} required />
       </Champ>
       <div className="flex gap-2">
         <button type="submit" className="bouton-primaire" disabled={envoi}>

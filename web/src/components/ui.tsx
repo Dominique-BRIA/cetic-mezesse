@@ -1,6 +1,6 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { AlertCircle, Loader2, X } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2, X } from 'lucide-react';
 import { ErreurApi } from '../lib/api';
 import { PERIODES } from '../lib/format';
 import type { CodePeriode } from '../lib/types';
@@ -135,6 +135,48 @@ export function Modale({
         </div>
       )}
     </dialog>
+  );
+}
+
+// Mot de passe avec un œil pour l'afficher ou le masquer.
+export function ChampMotDePasse({
+  valeur,
+  changer,
+  autoComplete,
+  minLength,
+  required,
+}: {
+  valeur: string;
+  changer: (v: string) => void;
+  autoComplete: 'current-password' | 'new-password';
+  minLength?: number;
+  required?: boolean;
+}) {
+  const [voir, setVoir] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        className="champ pr-10"
+        type={voir ? 'text' : 'password'}
+        autoComplete={autoComplete}
+        minLength={minLength}
+        required={required}
+        value={valeur}
+        onChange={(e) => changer(e.target.value)}
+      />
+      <button
+        type="button"
+        className="absolute inset-y-0 right-0 px-3 text-encre-3 hover:text-encre"
+        onClick={(e) => {
+          e.preventDefault();
+          setVoir(!voir);
+        }}
+        aria-label={voir ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+        title={voir ? 'Masquer' : 'Afficher'}
+      >
+        {voir ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
   );
 }
 

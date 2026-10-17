@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { useApp } from '../lib/contexte';
 import { ROLES } from '../lib/format';
 import type { Utilisateur } from '../lib/types';
-import { Carte, Champ, Erreur, Page } from '../components/ui';
+import { Carte, Champ, ChampMotDePasse, Erreur, Page } from '../components/ui';
 
 // Espace profil : chacun modifie ses propres informations.
 export default function Profil() {
@@ -96,14 +96,7 @@ export default function Profil() {
                 aide="Obligatoire pour changer de téléphone ou d'e-mail : ce sont vos identifiants de connexion."
                 className="sm:col-span-2"
               >
-                <input
-                  className="champ"
-                  type="password"
-                  autoComplete="current-password"
-                  value={motDePasse}
-                  onChange={(e) => setMotDePasse(e.target.value)}
-                  required
-                />
+                <ChampMotDePasse autoComplete="current-password" valeur={motDePasse} changer={setMotDePasse} required />
               </Champ>
             )}
             <div className="sm:col-span-2">

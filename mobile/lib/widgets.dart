@@ -357,3 +357,36 @@ Future<List<Map<String, dynamic>>> chargerClasses() async =>
     (await Api.i.get('/classes') as List).cast<Map<String, dynamic>>();
 
 bool get peutEcrire => Etat.i.estSG;
+
+/// Mot de passe avec un œil pour l'afficher ou le masquer.
+class ChampMotDePasse extends StatefulWidget {
+  const ChampMotDePasse({super.key, required this.controleur, required this.libelle, this.aide, this.onChanged});
+  final TextEditingController controleur;
+  final String libelle;
+  final String? aide;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  State<ChampMotDePasse> createState() => _ChampMotDePasseState();
+}
+
+class _ChampMotDePasseState extends State<ChampMotDePasse> {
+  bool _voir = false;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: widget.controleur,
+        obscureText: !_voir,
+        onChanged: widget.onChanged,
+        decoration: InputDecoration(
+          labelText: widget.libelle,
+          helperText: widget.aide,
+          helperMaxLines: 2,
+          suffixIcon: IconButton(
+            tooltip: _voir ? 'Masquer le mot de passe' : 'Afficher le mot de passe',
+            icon: Icon(_voir ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+            onPressed: () => setState(() => _voir = !_voir),
+          ),
+        ),
+      );
+}
