@@ -123,6 +123,13 @@ class Etat extends ChangeNotifier {
     unawaited(chargerAnnees().catchError((_) {}));
   }
 
+  /// Profil modifié par l'utilisateur lui-même (écran Mon profil).
+  Future<void> majProfil(Map<String, dynamic> u) async {
+    utilisateur = u;
+    await _garderProfil();
+    notifyListeners();
+  }
+
   Future<void> rafraichirProfil() async {
     utilisateur = (await Api.i.get('/auth/moi', annee: false) as Map).cast<String, dynamic>();
     await _garderProfil();

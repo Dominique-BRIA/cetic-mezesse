@@ -4,7 +4,8 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { authentifier, session, signerJeton } from '../lib/auth';
-import { ErreurHttp, invalide } from '../lib/erreurs';
+import { conflit, ErreurHttp, invalide } from '../lib/erreurs';
+import { telephone, texte, texteOptionnel } from '../lib/validation';
 
 export const auth = Router();
 
@@ -47,6 +48,54 @@ auth.post('/connexion', limiteConnexion, async (req, res) => {
 auth.get('/moi', authentifier, async (req, res) => {
   const u = await prisma.utilisateur.findUniqueOrThrow({ where: { id: session(req).id }, select: profilPublic });
   res.json(u);
+});
+
+// Espace profil : chacun modifie ses propres informations. Changer le téléphone ou l'e-mail,
+// qui servent d'identifiant de connexion, demande le mot de passe actuel.
+auth.put('/moi', authentifier, async (req, res) => {
+  const vide = z.literal('').transform(() => null);
+  const data = z
+    .object({
+      nom: texte(60),
+      prenom: texte(80),
+      telephone: telephone.optional().nullable().or(vide),
+      email: z.string().trim().toLowerCase().email('adresse e-mail invalide').optional().nullable().or(vide),
+      discipline: texteOptionnel(80),
+      motDePasse: z.string().optional(),
+    })
+    .refine((u) => u.telephone || u.email, { message: 'renseignez un téléphone ou un e-mail', path: ['telephone'] })
+    .parse(req.body);
+  const u = await prisma.utilisateur.findUniqueOrThrow({ where: { id: session(req).id } });
+  const telephoneNouveau = data.telephone ?? null;
+  const emailNouveau = data.email ?? null;
+  if (telephoneNouveau !== u.telephone || emailNouveau !== u.email) {
+    if (!data.motDePasse || !(await bcrypt.compare(data.motDePasse, u.motDePasse))) {
+      throw invalide('Pour changer de téléphone ou d’e-mail, saisissez votre mot de passe actuel.');
+    }
+  }
+  const pris = await prisma.utilisateur.findFirst({
+    where: {
+      id: { not: u.id },
+      OR: [...(telephoneNouveau ? [{ telephone: telephoneNouveau }] : []), ...(emailNouveau ? [{ email: emailNouveau }] : [])],
+    },
+    select: { telephone: true },
+  });
+  if (pris) {
+    throw conflit(pris.telephone === telephoneNouveau ? 'Ce numéro est déjà utilisé par un autre compte.' : 'Cette adresse e-mail est déjà utilisée par un autre compte.');
+  }
+  const maj = await prisma.utilisateur.update({
+    where: { id: u.id },
+    data: {
+      nom: data.nom,
+      prenom: data.prenom,
+      telephone: telephoneNouveau,
+      email: emailNouveau,
+      // La discipline n'a de sens que pour un professeur.
+      ...(u.role === 'PROFESSEUR' ? { discipline: data.discipline } : {}),
+    },
+    select: profilPublic,
+  });
+  res.json(maj);
 });
 
 auth.post('/mot-de-passe', authentifier, async (req, res) => {

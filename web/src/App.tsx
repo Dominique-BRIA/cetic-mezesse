@@ -27,6 +27,7 @@ const Classement = lazy(() => import('./pages/evaluations/Classement'));
 const Annees = lazy(() => import('./pages/admin/Annees'));
 const Parametres = lazy(() => import('./pages/admin/Parametres'));
 const Decisions = lazy(() => import('./pages/admin/Decisions'));
+const Profil = lazy(() => import('./pages/Profil'));
 
 const P: Role = 'PROVISEUR';
 const SG: Role = 'SURVEILLANT_GENERAL';
@@ -50,6 +51,7 @@ export function App() {
         <Route element={<Cadre />}>
           <Route index element={<TableauDeBord />} />
           <Route path="mot-de-passe" element={<MotDePasse />} />
+          <Route path="profil" element={<Profil />} />
           <Route path="saisie" element={r([PR], <Saisie />)} />
           <Route path="manquantes" element={r([PR], <Manquantes />)} />
           <Route path="statistiques-matieres" element={r([PR], <StatsMatieres />)} />

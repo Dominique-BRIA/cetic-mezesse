@@ -163,12 +163,18 @@ export function Cadre() {
       </nav>
 
       <div className="border-t border-bord px-3 py-3">
-        <div className="px-1">
+        <NavLink
+          to="/profil"
+          title="Mon profil"
+          className={({ isActive }) =>
+            clsx('block rounded px-1 py-0.5 hover:bg-surface-2', isActive && 'bg-primaire-pale text-primaire')
+          }
+        >
           <div className="truncate text-sm font-semibold">
             {utilisateur.prenom} {utilisateur.nom}
           </div>
-          <div className="text-xs text-encre-2">{ROLES[utilisateur.role]}</div>
-        </div>
+          <div className="text-xs text-encre-2">{ROLES[utilisateur.role]} · Mon profil</div>
+        </NavLink>
         <div className="mt-2 flex items-center gap-1">
           <button type="button" className="bouton-discret" onClick={basculerTheme} title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}>
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

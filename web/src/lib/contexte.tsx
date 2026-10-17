@@ -10,6 +10,7 @@ interface Contexte {
   connecter: (jeton: string, u: Utilisateur, persistant?: boolean) => void;
   deconnecter: () => void;
   rafraichirProfil: () => Promise<void>;
+  majProfil: (u: Utilisateur) => void;
   a: (...roles: Role[]) => boolean;
   annees: Annee[];
   annee: Annee | null;
@@ -70,6 +71,7 @@ export function FournisseurApp({ children }: { children: ReactNode }) {
     },
     deconnecter,
     rafraichirProfil: async () => setUtilisateur(await api<Utilisateur>('/auth/moi', { annee: false })),
+    majProfil: setUtilisateur,
     a: (...roles) => Boolean(utilisateur && roles.includes(utilisateur.role)),
     annees,
     annee,

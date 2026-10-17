@@ -17,6 +17,7 @@ import 'eleves.dart';
 import 'evaluations.dart';
 import 'organisation.dart';
 import 'prof.dart';
+import 'profil.dart';
 
 class Destination {
   const Destination(this.cle, this.libelle, this.icone, this.roles, this.ecran, {this.section});
@@ -227,10 +228,20 @@ class _Tiroir extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
             child: Row(children: [
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('${e.utilisateur?['prenom']} ${e.utilisateur?['nom']}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Text(roles[e.role] ?? '', style: TextStyle(fontSize: 12, color: c.encre2)),
-                ]),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(6),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const EcranProfil()));
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${e.utilisateur?['prenom']} ${e.utilisateur?['nom']}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text('${roles[e.role] ?? ''} · Mon profil', style: TextStyle(fontSize: 12, color: c.encre2)),
+                    ]),
+                  ),
+                ),
               ),
               IconButton(
                 tooltip: 'Changer de thème',
