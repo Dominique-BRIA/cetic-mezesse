@@ -1,13 +1,13 @@
 // Journal de diagnostic affiché par-dessus l'application : étapes du démarrage, appels au
-// serveur et erreurs. Activé par défaut le temps de régler le démarrage sur téléphone ;
-// à couper au build avec --dart-define=JOURNAL=false.
+// serveur et erreurs. Masqué par défaut ; pour le rebrancher, construire avec
+// --dart-define=JOURNAL=true (il a servi à trouver le chargement infini au démarrage).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
 import 'api.dart';
 
-const journalActif = bool.fromEnvironment('JOURNAL', defaultValue: true);
+const journalActif = bool.fromEnvironment('JOURNAL', defaultValue: false);
 
 final ValueNotifier<List<String>> journal = ValueNotifier(const []);
 final _debut = DateTime.now();

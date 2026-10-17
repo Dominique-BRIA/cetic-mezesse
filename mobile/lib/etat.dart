@@ -14,7 +14,7 @@ class Etat extends ChangeNotifier {
 
   Map<String, dynamic>? utilisateur;
   List<Map<String, dynamic>> annees = [];
-  ThemeMode theme = ThemeMode.system;
+  ThemeMode theme = ThemeMode.light;
   bool demarrage = true;
 
   String get role => utilisateur?['role'] as String? ?? '';
@@ -58,7 +58,7 @@ class Etat extends ChangeNotifier {
       theme = switch (Api.i.prefs.getString('theme')) {
         'dark' => ThemeMode.dark,
         'light' => ThemeMode.light,
-        _ => ThemeMode.system,
+        _ => ThemeMode.light,
       };
       FileAttente.i.charger();
       noter('démarrage : file d’attente chargée (${FileAttente.i.envois.length} envoi(s))');
