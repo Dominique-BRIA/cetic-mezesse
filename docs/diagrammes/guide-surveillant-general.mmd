@@ -1,0 +1,37 @@
+flowchart TD
+  A["1 · Paramètres<br/>établissement et barèmes"]:::admin
+  B["2 · Année scolaire<br/>créée et en cours"]:::admin
+  C["3 · Spécialités"]:::orga
+  D["4 · Classes<br/>niveau + spécialité"]:::orga
+  E["5 · Comptes des enseignants"]:::orga
+  F["6 · Groupes de matières<br/>rattachés aux classes"]:::orga
+  G["7 · Matières<br/>classe + groupe + professeur"]:::orga
+  H["8 · Élèves<br/>un par un ou import Excel"]:::scol
+  I["9 · Photos des élèves"]:::scol
+  N["Cartes scolaires"]:::scol
+  J["10 · Ouvrir la séquence"]:::admin
+  K["Saisie des notes<br/>par les professeurs"]:::autre
+  L["11 · Fermer la séquence"]:::admin
+  M["12 · Bulletins, statistiques<br/>et classement"]:::eval
+  A --> B
+  B --> D
+  B --> J
+  C --> D
+  D --> F
+  D --> H
+  F --> G
+  E --> G
+  G --> K
+  H --> K
+  J --> K
+  K --> L
+  L --> M
+  A --> M
+  H --> I
+  I --> N
+  A --> N
+  classDef admin fill:#e4effa,stroke:#1d5fa8,color:#14202e
+  classDef orga fill:#e8f5ee,stroke:#007a5e,color:#14202e
+  classDef scol fill:#fff7e0,stroke:#b8860b,color:#14202e
+  classDef eval fill:#f3e8fb,stroke:#7b3fa8,color:#14202e
+  classDef autre fill:#f1f5f9,stroke:#8a96a6,color:#4e5d70,stroke-dasharray: 5 4

@@ -1,0 +1,26 @@
+flowchart TD
+  A["1 · Première connexion<br/>mot de passe de l'installation"]:::admin
+  B["2 · Choisir son mot de passe"]:::admin
+  C["3 · Compléter son profil<br/>nom, prénom, téléphone"]:::admin
+  S1["Le SG organise l'année<br/>classes, matières, élèves"]:::autre
+  S2["Le SG prend une décision"]:::autre
+  D["4 · Décisions prises<br/>consulter le journal"]:::orga
+  E["5 · Désapprouver<br/>dans les 4 semaines"]:::orga
+  N["Le SG est notifié,<br/>l'action est défaite"]:::autre
+  F["6 · Renvoyer un élève<br/>date et motif"]:::scol
+  G["7 · Réintégrer l'élève"]:::scol
+  P["Les professeurs saisissent<br/>les notes de la séquence"]:::autre
+  H["8 · Bulletins, statistiques<br/>et classement"]:::eval
+  I["Cartes scolaires<br/>élèves avec photo"]:::scol
+  A --> B --> C
+  C --> D
+  S2 --> D
+  D --> E --> N
+  S1 --> F --> G
+  S1 --> P --> H
+  S1 --> I
+  classDef admin fill:#e4effa,stroke:#1d5fa8,color:#14202e
+  classDef orga fill:#e8f5ee,stroke:#007a5e,color:#14202e
+  classDef scol fill:#fff7e0,stroke:#b8860b,color:#14202e
+  classDef eval fill:#f3e8fb,stroke:#7b3fa8,color:#14202e
+  classDef autre fill:#f1f5f9,stroke:#8a96a6,color:#4e5d70,stroke-dasharray: 5 4

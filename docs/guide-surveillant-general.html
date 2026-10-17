@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Guide de première utilisation - Surveillant Général - CETIC de Mezesse</title>
+<link rel="stylesheet" href="style-documents.css">
+</head>
+<body>
+
+<section class="garde">
+  <div>
+    <div class="drapeau"><div style="background:#007a5e"></div><div style="background:#ce1126"></div><div style="background:#fcd116"></div></div>
+    <div class="entete">
+      <div class="gauche"><b>RÉPUBLIQUE DU CAMEROUN</b><br><i>Paix – Travail – Patrie</i><br>Ministère des Enseignements Secondaires<br>DRES-Sud · DDES Dja-et-Lobo</div>
+      <img class="sceau" src="../web/public/logo.png" alt="Sceau du CETIC de Mezesse">
+      <div class="droite"><b>REPUBLIC OF CAMEROON</b><br><i>Peace – Work – Fatherland</i><br>Ministry of Secondary Education<br>South RDSE · Dja and Lobo DDSE</div>
+    </div>
+    <h1>Guide de première utilisation</h1>
+    <p class="sous">Mettre en place l'année scolaire, dans le bon ordre<br>Application de gestion scolaire du CETIC de Mezesse</p>
+    <span class="ue">Surveillant Général</span>
+  </div>
+  <div class="bas">
+    <table>
+      <tr><td style="width:40%"><b>Établissement</b></td><td>Collège d'Enseignement Technique Industriel et Commercial de Mezesse</td></tr>
+      <tr><td><b>Adresse de l'application</b></td><td>https://ceticmezesse.vercel.app (web) · application Android</td></tr>
+      <tr><td><b>Pour aller plus loin</b></td><td>Manuel du Surveillant Général</td></tr>
+      <tr><td><b>Date</b></td><td>Octobre 2026</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="chapitre">
+  <h2>Pourquoi un ordre ?</h2>
+  <p>Dans l'application, chaque élément s'appuie sur d'autres. Une matière appartient à une classe et à un groupe de matières ; un élève est inscrit dans une classe ; les professeurs ne saisissent des notes que pour les matières qui leur sont attribuées et pendant une séquence ouverte. Si vous suivez l'ordre de ce guide, chaque écran trouvera ce dont il a besoin.</p>
+  <p>Le schéma de la page suivante montre ces dépendances. Une flèche signifie « doit exister avant ». Les cases en pointillés sont faites par d'autres que vous.</p>
+  <div class="grille2">
+    <div class="carte"><b>Bleu : administration.</b> Paramètres, année scolaire, séquences.</div>
+    <div class="carte"><b>Vert : organisation.</b> Spécialités, classes, groupes, enseignants, matières.</div>
+    <div class="carte"><b>Jaune : scolarité.</b> Élèves, photos, cartes scolaires.</div>
+    <div class="carte"><b>Violet : évaluations.</b> Bulletins, statistiques, classement.</div>
+  </div>
+</section>
+
+<section class="chapitre paysage">
+  <h2>Le schéma des dépendances</h2>
+  <figure class="diagramme"><img src="img/guide-surveillant-general.svg" style="max-height:150mm;border:none" alt="Dépendances entre les actions du Surveillant Général"><figcaption>Figure 1 — Ce qui doit exister avant chaque action</figcaption></figure>
+</section>
+
+<section class="chapitre">
+  <h2>Les étapes, une par une</h2>
+
+  <h3>Avant de commencer</h3>
+  <div class="etape"><div class="num">0</div><div><b>Connectez-vous</b> avec le numéro de téléphone du compte SG et le mot de passe remis à l'installation. Ouvrez aussitôt <b>Mon profil</b> (votre nom, en bas du menu) pour mettre vos vrais nom et prénom, puis <b>Changer mon mot de passe</b>.</div></div>
+
+  <h3>Administration</h3>
+  <div class="etape"><div class="num">1</div><div><b>Paramètres</b> (menu Administration). Vérifiez le nom de l'établissement en français et en anglais, la région, le département, le code et le préfixe des matricules : ils s'impriment sur les bulletins, les listes et les cartes scolaires. Vérifiez aussi les barèmes des grades et des cotes.</div></div>
+  <div class="etape"><div class="num">2</div><div><b>Années et séquences.</b> L'année en cours est créée à l'installation. Pour une nouvelle année, cliquez <b>Nouvelle année</b> : vous pouvez reprendre l'organisation d'une année précédente (groupes, classes, matières, professeurs), ce qui évite les étapes 4 à 7.</div></div>
+
+  <h3>Organisation</h3>
+  <div class="etape"><div class="num">3</div><div><b>Spécialités</b> (page Classes, bouton <b>Spécialités</b>). Créez les spécialités enseignées : Mécanique, Électricité… Elles servent d'une année sur l'autre.</div></div>
+  <div class="etape"><div class="num">4</div><div><b>Classes.</b> Choisissez le niveau et la spécialité : le nom se calcule tout seul. Créez autant de classes que de divisions ; si un niveau et une spécialité comptent plusieurs classes, l'application ajoute les lettres A, B… Choisissez le professeur principal quand son compte existe (étape 5).</div></div>
+  <div class="etape"><div class="num">5</div><div><b>Enseignants.</b> Créez un compte par professeur, avec son téléphone ou son e-mail. Le mot de passe provisoire est <code>password</code> ; le professeur le change à sa première connexion.</div></div>
+  <div class="etape"><div class="num">6</div><div><b>Groupes de matières</b> (matières générales, professionnelles, complémentaires…). Chaque groupe est rattaché aux classes qui l'utilisent ; il faut donc que les classes existent.</div></div>
+  <div class="etape"><div class="num">7</div><div><b>Matières.</b> Pour chaque classe : nom, coefficient, groupe (rattaché à cette classe) et professeur. Sans professeur attribué, personne ne peut saisir les notes de la matière.</div></div>
+
+  <h3>Scolarité</h3>
+  <div class="etape"><div class="num">8</div><div><b>Élèves.</b> Inscrivez-les un par un (<b>Nouvel élève</b>) ou par classe avec <b>Importer</b> : téléchargez le modèle Excel, remplissez-le, envoyez-le. L'import est « tout ou rien » : une seule ligne invalide et rien n'est enregistré, avec la liste des erreurs à corriger.</div></div>
+  <div class="etape"><div class="num">9</div><div><b>Photos.</b> Sur la fiche de chaque élève, <b>Changer la photo</b>. La photo est obligatoire pour la carte scolaire et s'imprime sur le bulletin.</div></div>
+
+  <h3>Pendant l'année</h3>
+  <div class="etape"><div class="num">10</div><div><b>Ouvrir la séquence</b> (Années et séquences). Les professeurs concernés reçoivent une notification et peuvent saisir leurs notes.</div></div>
+  <div class="etape"><div class="num">11</div><div><b>Fermer la séquence</b> quand la saisie est terminée. Suivez l'avancement dans <b>Notes</b> et sur le tableau de bord ; une séquence fermée peut être rouverte.</div></div>
+  <div class="etape"><div class="num">12</div><div><b>Bulletins, statistiques et classement</b> (menu Évaluations). Les <b>cartes scolaires</b> (menu Scolarité) s'impriment dès que les élèves ont une photo.</div></div>
+</section>
+
+<section class="chapitre">
+  <h2>Ce qu'il faut avant chaque action</h2>
+  <p>Si un écran refuse une action, cherchez la ligne correspondante : il manque sans doute l'élément de la colonne du milieu.</p>
+  <table>
+    <tr><th style="width:30%">Pour…</th><th style="width:44%">Il faut d'abord…</th><th>Où</th></tr>
+    <tr><td>Créer une classe</td><td>Une année en cours ; la spécialité, si la classe en a une</td><td>Classes</td></tr>
+    <tr><td>Choisir un professeur principal</td><td>Le compte de l'enseignant</td><td>Classes</td></tr>
+    <tr><td>Créer un groupe de matières</td><td>Au moins une classe</td><td>Groupes de matières</td></tr>
+    <tr><td>Créer une matière</td><td>La classe, et un groupe rattaché à cette classe</td><td>Matières</td></tr>
+    <tr><td>Attribuer une matière à un professeur</td><td>Le compte de l'enseignant</td><td>Matières</td></tr>
+    <tr><td>Inscrire un élève</td><td>Une classe de l'année</td><td>Élèves</td></tr>
+    <tr><td>Imprimer une carte scolaire</td><td>La photo de l'élève ; les informations de l'établissement</td><td>Cartes scolaires</td></tr>
+    <tr><td>Permettre la saisie des notes</td><td>Matière attribuée, élèves inscrits, séquence ouverte</td><td>Années et séquences</td></tr>
+    <tr><td>Éditer les bulletins</td><td>Des notes saisies ; les barèmes</td><td>Bulletins</td></tr>
+    <tr><td>Réinscrire des élèves</td><td>La nouvelle année et ses classes</td><td>Réinscriptions</td></tr>
+  </table>
+
+  <h3>Ce qui bloque une suppression</h3>
+  <table>
+    <tr><th style="width:30%">Supprimer…</th><th>Possible seulement si…</th></tr>
+    <tr><td>Une spécialité</td><td>Aucune classe ne la porte</td></tr>
+    <tr><td>Une classe</td><td>Aucun élève n'y est inscrit (ses matières sont supprimées avec elle)</td></tr>
+    <tr><td>Un groupe de matières</td><td>Il ne contient plus aucune matière</td></tr>
+    <tr><td>Une matière notée</td><td>Vous confirmez : ses notes sont effacées avec elle</td></tr>
+  </table>
+
+  <div class="encadre"><b>Vos décisions sont suivies par le Proviseur.</b> Chaque action d'organisation, de scolarité ou d'administration est consignée dans le journal « Décisions prises ». Elle est approuvée d'office ; le Proviseur peut la désapprouver pendant 4 semaines, ce qui la défait. Vous en êtes prévenu par une notification (la cloche en haut du menu).</div>
+</section>
+
+</body>
+</html>

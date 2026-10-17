@@ -1,0 +1,25 @@
+flowchart TD
+  S1["Le SG crée votre compte"]:::autre
+  A["1 · Première connexion<br/>mot de passe provisoire « password »"]:::admin
+  B["2 · Choisir son mot de passe"]:::admin
+  C["3 · Compléter son profil<br/>discipline, téléphone"]:::admin
+  S2["Le SG vous attribue<br/>vos matières"]:::autre
+  S3["Le SG ouvre la séquence"]:::autre
+  D["4 · Notification<br/>« Séquence ouverte »"]:::orga
+  E["5 · Saisir les notes<br/>et la compétence visée"]:::eval
+  F["6 · Vérifier les élèves sans note"]:::eval
+  G["7 · Statistiques de mes matières"]:::eval
+  H["Sans réseau sur le téléphone :<br/>notes gardées puis envoyées"]:::scol
+  S4["Le SG ferme la séquence<br/>et édite les bulletins"]:::autre
+  S1 --> A --> B --> C
+  S2 --> E
+  S3 --> D --> E
+  C --> E
+  E --> F --> G
+  E -.-> H
+  F --> S4
+  classDef admin fill:#e4effa,stroke:#1d5fa8,color:#14202e
+  classDef orga fill:#e8f5ee,stroke:#007a5e,color:#14202e
+  classDef scol fill:#fff7e0,stroke:#b8860b,color:#14202e
+  classDef eval fill:#f3e8fb,stroke:#7b3fa8,color:#14202e
+  classDef autre fill:#f1f5f9,stroke:#8a96a6,color:#4e5d70,stroke-dasharray: 5 4
