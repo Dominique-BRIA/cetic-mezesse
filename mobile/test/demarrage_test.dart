@@ -59,6 +59,21 @@ void main() {
     expect(find.byType(EcranConnexion), findsOneWidget);
   });
 
+  // Ordre réel de main() : l'interface s'affiche pendant que le démarrage tourne encore.
+  testWidgets('ordre réel du lancement : le cercle laisse place à la connexion', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    Etat.i
+      ..utilisateur = null
+      ..annees = []
+      ..demarrage = true;
+    final demarrage = Etat.i.demarrer();
+    await t.pumpWidget(const Application());
+    await t.runAsync(() => demarrage.timeout(const Duration(seconds: 5)));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(Etat.i.demarrage, isFalse);
+    expect(find.byType(EcranConnexion), findsOneWidget);
+  });
+
   testWidgets('pas de cercle de chargement après le démarrage', (t) async {
     await demarrer(t, {'jeton': 'j', 'profil': jsonEncode(profil)});
     expect(find.byWidgetPredicate((w) => w is Scaffold && w.appBar == null && w.body is Center), findsNothing);

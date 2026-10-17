@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import 'api.dart';
 import 'file_attente.dart';
+import 'journal.dart';
 
 class Etat extends ChangeNotifier {
   Etat._();
@@ -45,8 +46,10 @@ class Etat extends ChangeNotifier {
   /// Aboutit toujours : une donnée locale illisible ne doit pas laisser l'écran d'ouverture
   /// tourner sans fin. Dans le pire des cas, on revient à l'écran de connexion.
   Future<void> demarrer() async {
+    noter('démarrage : début');
     try {
       await Api.i.initialiser();
+      noter('démarrage : réglages lus (session ${Api.i.jeton != null ? 'oui' : 'non'}, profil gardé ${Api.i.prefs.containsKey('profil') ? 'oui' : 'non'}, file ${Api.i.prefs.containsKey('file-attente') ? 'oui' : 'non'})');
       Api.i.surSessionExpiree = deconnecter;
       Api.i.surRetourReseau = () {
         FileAttente.i.synchroniser();
@@ -58,6 +61,7 @@ class Etat extends ChangeNotifier {
         _ => ThemeMode.system,
       };
       FileAttente.i.charger();
+      noter('démarrage : file d’attente chargée (${FileAttente.i.envois.length} envoi(s))');
       // Jamais d'attente du serveur à l'ouverture : la session reprend avec le profil et les
       // années gardés sur le téléphone, puis se met à jour en arrière-plan.
       if (Api.i.jeton != null) {
@@ -72,10 +76,12 @@ class Etat extends ChangeNotifier {
         }
       }
     } catch (e, pile) {
+      noter('ERREUR démarrage : $e');
       debugPrint('Démarrage interrompu : $e\n$pile');
       utilisateur = null;
     } finally {
       demarrage = false;
+      noter('démarrage : fini (${utilisateur == null ? 'connexion' : 'session reprise'})');
       notifyListeners();
     }
     if (utilisateur != null) unawaited(_rafraichir());

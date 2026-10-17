@@ -10,6 +10,8 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'journal.dart';
+
 class ErreurApi implements Exception {
   ErreurApi(this.statut, this.message, {this.horsLigne = false});
   final int statut;
@@ -67,20 +69,25 @@ class Api {
     if (etaitHorsLigne) surRetourReseau?.call();
   }
 
-  Future<http.Response> _executer(Future<http.Response> Function() requete) async {
+  Future<http.Response> _executer(Future<http.Response> Function() requete, {String quoi = 'requête'}) async {
     http.Response r;
+    final chrono = Stopwatch()..start();
     try {
       r = await requete().timeout(const Duration(seconds: 25));
-    } on SocketException {
+    } on SocketException catch (e) {
+      noter('ERREUR réseau $quoi : ${e.message} (${chrono.elapsedMilliseconds} ms)');
       horsLigne.value = true;
       throw ErreurApi(0, 'Pas de connexion au serveur.', horsLigne: true);
     } on TimeoutException {
+      noter('ERREUR délai dépassé $quoi (${chrono.elapsedMilliseconds} ms)');
       horsLigne.value = true;
       throw ErreurApi(0, 'Le serveur ne répond pas.', horsLigne: true);
-    } on http.ClientException {
+    } on http.ClientException catch (e) {
+      noter('ERREUR client $quoi : ${e.message}');
       horsLigne.value = true;
       throw ErreurApi(0, 'Pas de connexion au serveur.', horsLigne: true);
     }
+    noter('$quoi → ${r.statusCode} (${chrono.elapsedMilliseconds} ms)');
     _reseauOk();
     if (r.statusCode == 401 && jeton != null) surSessionExpiree?.call();
     if (r.statusCode >= 400) {
@@ -112,7 +119,7 @@ class Api {
       return jsonDecode(copieConnue);
     }
     try {
-      final r = await _executer(() => http.get(uri, headers: _entetes()));
+      final r = await _executer(() => http.get(uri, headers: _entetes()), quoi: 'GET ${uri.path}');
       final texte = utf8.decode(r.bodyBytes);
       unawaited(prefs.setString(cle, texte));
       return jsonDecode(texte);
@@ -125,7 +132,7 @@ class Api {
 
   Future<void> _rafraichirCache(Uri uri, String cle) async {
     try {
-      final r = await _executer(() => http.get(uri, headers: _entetes()));
+      final r = await _executer(() => http.get(uri, headers: _entetes()), quoi: 'GET ${uri.path}');
       await prefs.setString(cle, utf8.decode(r.bodyBytes));
     } catch (_) {
       // toujours hors ligne : la copie servie reste valable
@@ -136,7 +143,7 @@ class Api {
     final uri = _uri(chemin, annee: annee);
     final req = http.Request(methode, uri)..headers.addAll(_entetes(json: corps != null));
     if (corps != null) req.body = jsonEncode(corps);
-    final r = await _executer(() async => http.Response.fromStream(await req.send()));
+    final r = await _executer(() async => http.Response.fromStream(await req.send()), quoi: '${req.method} ${req.url.path}');
     if (r.statusCode == 204 || r.bodyBytes.isEmpty) return null;
     return jsonDecode(utf8.decode(r.bodyBytes));
   }
@@ -151,7 +158,7 @@ class Api {
       ..headers.addAll(_entetes())
       ..fields.addAll(champs)
       ..files.add(await http.MultipartFile.fromPath(champ, fichier.path));
-    final r = await _executer(() async => http.Response.fromStream(await req.send()));
+    final r = await _executer(() async => http.Response.fromStream(await req.send()), quoi: '${req.method} ${req.url.path}');
     return jsonDecode(utf8.decode(r.bodyBytes));
   }
 
@@ -159,7 +166,7 @@ class Api {
   Future<void> ouvrirDocument(String chemin, {String methode = 'GET', Object? corps}) async {
     final req = http.Request(methode, _uri(chemin))..headers.addAll(_entetes(json: corps != null));
     if (corps != null) req.body = jsonEncode(corps);
-    final r = await _executer(() async => http.Response.fromStream(await req.send()));
+    final r = await _executer(() async => http.Response.fromStream(await req.send()), quoi: '${req.method} ${req.url.path}');
     final nom = RegExp(r'filename="([^"]+)"').firstMatch(r.headers['content-disposition'] ?? '')?.group(1) ?? 'document';
     final dossier = await getTemporaryDirectory();
     final f = File('${dossier.path}/$nom');

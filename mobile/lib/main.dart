@@ -7,17 +7,26 @@ import 'ecrans/coquille.dart';
 import 'ecrans/connexion.dart';
 import 'etat.dart';
 import 'file_attente.dart';
+import 'journal.dart';
 import 'motif.dart';
 import 'theme.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  Etat.i.demarrer();
-  // Nouvelle tentative d'envoi des notes en attente toutes les minutes.
-  Timer.periodic(const Duration(minutes: 1), (_) {
-    if (FileAttente.i.envois.isNotEmpty) FileAttente.i.synchroniser();
-  });
-  runApp(const Application());
+  runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    noter('main : lancement (API ${Api.base})');
+    FlutterError.onError = (d) {
+      noter('ERREUR Flutter : ${d.exceptionAsString()}');
+      FlutterError.presentError(d);
+    };
+    Etat.i.demarrer();
+    // Nouvelle tentative d'envoi des notes en attente toutes les minutes.
+    Timer.periodic(const Duration(minutes: 1), (_) {
+      if (FileAttente.i.envois.isNotEmpty) FileAttente.i.synchroniser();
+    });
+    runApp(const Application());
+    noter('main : interface lancée');
+  }, (e, pile) => noter('ERREUR non interceptée : $e'));
 }
 
 class Application extends StatelessWidget {
@@ -34,6 +43,9 @@ class Application extends StatelessWidget {
         darkTheme: construireTheme(Brightness.dark),
         themeMode: Etat.i.theme,
         home: const Accueil(),
+        builder: (context, enfant) => journalActif
+            ? Stack(children: [enfant ?? const SizedBox(), const PanneauJournal()])
+            : enfant ?? const SizedBox(),
       ),
     );
   }
@@ -45,6 +57,7 @@ class Accueil extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = Etat.i;
+    noter('écran : ${e.demarrage ? 'chargement' : e.utilisateur == null ? 'connexion' : 'accueil (${e.role})'}');
     if (e.demarrage) {
       return const MotifFond(child: Scaffold(body: Center(child: CircularProgressIndicator(strokeWidth: 2.5))));
     }
