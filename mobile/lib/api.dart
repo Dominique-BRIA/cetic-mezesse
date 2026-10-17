@@ -91,10 +91,23 @@ class Api {
     return r;
   }
 
+  /// Copie locale d'une lecture précédente, sans passer par le réseau.
+  dynamic lireCache(String chemin, {bool annee = true}) {
+    final copie = prefs.getString('cache:${_uri(chemin, annee: annee)}');
+    return copie == null ? null : jsonDecode(copie);
+  }
+
   /// Lecture avec repli sur la copie locale en cas d'absence de réseau.
   Future<dynamic> get(String chemin, {bool annee = true}) async {
     final uri = _uri(chemin, annee: annee);
     final cle = 'cache:$uri';
+    // Déjà hors ligne : on sert la copie tout de suite et on retente le réseau en arrière-plan,
+    // plutôt que d'attendre l'expiration de chaque requête.
+    final copieConnue = prefs.getString(cle);
+    if (horsLigne.value && copieConnue != null) {
+      unawaited(_rafraichirCache(uri, cle));
+      return jsonDecode(copieConnue);
+    }
     try {
       final r = await _executer(() => http.get(uri, headers: _entetes()));
       final texte = utf8.decode(r.bodyBytes);
@@ -104,6 +117,15 @@ class Api {
       final copie = prefs.getString(cle);
       if (e.horsLigne && copie != null) return jsonDecode(copie);
       rethrow;
+    }
+  }
+
+  Future<void> _rafraichirCache(Uri uri, String cle) async {
+    try {
+      final r = await _executer(() => http.get(uri, headers: _entetes()));
+      await prefs.setString(cle, utf8.decode(r.bodyBytes));
+    } catch (_) {
+      // toujours hors ligne : la copie servie reste valable
     }
   }
 

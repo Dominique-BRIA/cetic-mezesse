@@ -1,4 +1,6 @@
 // État de l'application : utilisateur connecté, années scolaires, thème.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'api.dart';
@@ -48,18 +50,45 @@ class Etat extends ChangeNotifier {
       _ => ThemeMode.system,
     };
     Api.i.surSessionExpiree = deconnecter;
-    Api.i.surRetourReseau = () => FileAttente.i.synchroniser();
+    Api.i.surRetourReseau = () {
+      FileAttente.i.synchroniser();
+      _rafraichir();
+    };
     if (Api.i.jeton != null) {
-      try {
-        utilisateur = (await Api.i.get('/auth/moi', annee: false) as Map).cast<String, dynamic>();
-        await chargerAnnees();
-        FileAttente.i.synchroniser();
-      } on ErreurApi catch (e) {
-        if (!e.horsLigne) await deconnecter();
+      // Hors ligne d'abord : la session reprend avec le profil et les années gardés sur le
+      // téléphone, sans attendre le serveur ; la mise à jour se fait ensuite en arrière-plan.
+      final profil = Api.i.lireCache('/auth/moi', annee: false);
+      final copieAnnees = Api.i.lireCache('/annees', annee: false);
+      if (profil is Map) {
+        utilisateur = profil.cast<String, dynamic>();
+        if (copieAnnees is List) annees = copieAnnees.cast<Map<String, dynamic>>();
+        unawaited(_rafraichir());
+      } else {
+        // Aucune copie (première ouverture après une mise à jour) : on attend le serveur une fois.
+        try {
+          utilisateur = (await Api.i.get('/auth/moi', annee: false) as Map).cast<String, dynamic>();
+          await chargerAnnees();
+          FileAttente.i.synchroniser();
+        } on ErreurApi catch (e) {
+          if (!e.horsLigne) await deconnecter();
+        }
       }
     }
     demarrage = false;
     notifyListeners();
+  }
+
+  /// Met à jour le profil et les années depuis le serveur, sans bloquer l'interface.
+  Future<void> _rafraichir() async {
+    if (Api.i.jeton == null) return;
+    try {
+      utilisateur = (await Api.i.get('/auth/moi', annee: false) as Map).cast<String, dynamic>();
+      await chargerAnnees();
+      FileAttente.i.synchroniser();
+      notifyListeners();
+    } on ErreurApi {
+      // hors ligne : on garde la copie ; une session expirée est traitée par surSessionExpiree
+    }
   }
 
   Future<void> chargerAnnees() async {
