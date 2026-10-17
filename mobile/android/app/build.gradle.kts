@@ -1,8 +1,16 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Clé de publication : android/key.properties (jamais versionné), écrit à la main en local
+// ou par le workflow GitHub à partir des secrets du dépôt.
+val fichierCle = rootProject.file("key.properties")
+val cle = Properties().apply { if (fichierCle.exists()) FileInputStream(fichierCle).use { load(it) } }
 
 android {
     namespace = "cm.cetic.mezesse.cetic_mezesse"
@@ -25,11 +33,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (fichierCle.exists()) {
+                storeFile = file(cle.getProperty("storeFile"))
+                storePassword = cle.getProperty("storePassword")
+                keyAlias = cle.getProperty("keyAlias")
+                keyPassword = cle.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Sans key.properties, on retombe sur la clé de débogage pour pouvoir tester en local ;
+            // le workflow GitHub, lui, refuse de publier un APK signé ainsi.
+            signingConfig = signingConfigs.getByName(if (fichierCle.exists()) "release" else "debug")
         }
     }
 }

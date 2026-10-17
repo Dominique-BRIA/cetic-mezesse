@@ -38,7 +38,7 @@ export function nouveauDocument(titre: string): Doc {
   return new PDFDocument({
     size: 'A4',
     margins: { top: 22, bottom: 18, left: 24, right: 24 },
-    info: { Title: titre, Author: 'CETIC de Mezessé', Creator: 'CETIC de Mezessé, gestion scolaire' },
+    info: { Title: titre, Author: 'CETIC de Mezesse', Creator: 'CETIC de Mezesse, gestion scolaire' },
     bufferPages: true,
   });
 }

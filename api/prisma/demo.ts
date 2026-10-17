@@ -24,7 +24,7 @@ const NOMS = [
 ];
 const PRENOMS_M = ['Jean Paul', 'Brice', 'Rodrigue', 'Yannick', 'Cédric', 'Steve', 'Junior', 'Arnaud', 'Franck', 'Hervé', 'Patrick', 'Thierry', 'Boris', 'Landry'];
 const PRENOMS_F = ['Christelle', 'Marie Claire', 'Sandrine', 'Murielle', 'Aurélie', 'Larissa', 'Ange', 'Carine', 'Nadège', 'Prisca', 'Laure', 'Josiane', 'Estelle', 'Vanessa'];
-const LIEUX = ['Sangmélima', 'Mezessé', 'Yaoundé', 'Ebolowa', 'Djoum', 'Meyomessala', 'Zoétélé'];
+const LIEUX = ['Sangmélima', 'Mezesse', 'Yaoundé', 'Ebolowa', 'Djoum', 'Meyomessala', 'Zoétélé'];
 
 const PROFS: [string, string, string][] = [
   ['NGUEMA', 'Albert', 'Français'],
@@ -170,7 +170,7 @@ async function main() {
           lieuNaissance: choisir(LIEUX),
           parentNom: `${choisir(NOMS)} ${choisir(PRENOMS_M)}`,
           parentTelephone: `6${String(Math.floor(alea() * 1e8)).padStart(8, '0')}`,
-          parentAdresse: choisir(['Mezessé', 'Sangmélima', 'Ndou-Libi']),
+          parentAdresse: choisir(['Mezesse', 'Sangmélima', 'Ndou-Libi']),
           inscriptions: { create: { anneeId: annee.id, classeId: c.id, redoublant: alea() < 0.12 } },
         },
         include: { inscriptions: true },

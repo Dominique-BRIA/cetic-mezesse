@@ -33,7 +33,7 @@ export function cartesScolaires(etab: Etablissement, annee: string, eleves: Elev
   const doc = new PDFDocument({
     size: 'A4',
     margin: 0,
-    info: { Title: `Cartes scolaires ${annee}`, Author: etab.nomFr, Creator: 'CETIC de Mezessé, gestion scolaire' },
+    info: { Title: `Cartes scolaires ${annee}`, Author: etab.nomFr, Creator: 'CETIC de Mezesse, gestion scolaire' },
   });
   const parPage = PAR_PAGE.colonnes * PAR_PAGE.lignes;
   eleves.forEach((e, i) => {

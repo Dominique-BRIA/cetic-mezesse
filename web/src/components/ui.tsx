@@ -17,7 +17,7 @@ export function Page({
   children: ReactNode;
 }) {
   useEffect(() => {
-    document.title = `${titre} · CETIC de Mezessé`;
+    document.title = `${titre} · CETIC de Mezesse`;
   }, [titre]);
   return (
     <div className="space-y-5">

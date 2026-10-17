@@ -1,4 +1,4 @@
-// Schéma de la base du CETIC de Mezessé.
+// Schéma de la base du CETIC de Mezesse.
 // Les règles de gestion qui justifient chaque contrainte sont dans docs/REGLES-DE-GESTION.md.
 
 generator client {

@@ -58,7 +58,7 @@ export function Connexion() {
               <div className="mt-0.5">MINESEC · DRES-Sud</div>
               <div>DDES Dja-et-Lobo</div>
             </div>
-            <img src="/logo.png" alt="Sceau du CETIC de Mezessé" className="h-16 w-16 sm:h-24 sm:w-24" />
+            <img src="/logo.png" alt="Sceau du CETIC de Mezesse" className="h-16 w-16 sm:h-24 sm:w-24" />
             <div className="text-right text-[0.68rem] leading-snug text-encre-2 sm:text-sm">
               <div className="font-bold uppercase tracking-wide text-encre">Republic of Cameroon</div>
               <div className="italic">Peace – Work – Fatherland</div>
@@ -70,7 +70,7 @@ export function Connexion() {
 
           {/* Établissement */}
           <div className="relative border-b border-bord px-5 py-5 text-center">
-            <div className="text-xl font-bold uppercase tracking-wide sm:text-2xl">CETIC de Mezessé</div>
+            <div className="text-xl font-bold uppercase tracking-wide sm:text-2xl">CETIC de Mezesse</div>
             <div className="text-sm text-encre-2 sm:text-base">Collège d'Enseignement Technique Industriel et Commercial</div>
             <div className="mt-0.5 text-xs font-semibold text-primaire sm:text-sm">Gestion scolaire et pédagogique</div>
             <button

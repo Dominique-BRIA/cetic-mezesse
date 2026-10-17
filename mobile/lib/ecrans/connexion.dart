@@ -17,7 +17,7 @@ class Marque extends StatelessWidget {
       Image.asset('assets/logo.png', width: t + 6, height: t + 6),
       const SizedBox(width: 10),
       Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-        Text('CETIC de Mezessé', style: TextStyle(fontWeight: FontWeight.w700, fontSize: compacte ? 15 : 16.5)),
+        Text('CETIC de Mezesse', style: TextStyle(fontWeight: FontWeight.w700, fontSize: compacte ? 15 : 16.5)),
         if (!compacte) Text('Gestion scolaire', style: TextStyle(fontSize: 12, color: context.c.encre2)),
       ]),
     ]);
@@ -30,10 +30,14 @@ class EcranConnexion extends StatefulWidget {
   State<EcranConnexion> createState() => _EcranConnexionState();
 }
 
+// Couleurs du drapeau, pour le filet en haut de l'écran (comme sur le web).
+const _drapeau = [Color(0xFF007A5E), Color(0xFFCE1126), Color(0xFFFCD116)];
+
 class _EcranConnexionState extends State<EcranConnexion> {
   final _id = TextEditingController();
   final _mdp = TextEditingController();
   bool _voir = false;
+  bool _memoriser = true;
   bool _envoi = false;
   String? _erreur;
 
@@ -45,7 +49,7 @@ class _EcranConnexionState extends State<EcranConnexion> {
     try {
       final r = await Api.i.envoyer('POST', '/auth/connexion',
           corps: {'identifiant': _id.text.trim(), 'motDePasse': _mdp.text}, annee: false) as Map;
-      await Etat.i.connecter(r['jeton'] as String, (r['utilisateur'] as Map).cast<String, dynamic>());
+      await Etat.i.connecter(r['jeton'] as String, (r['utilisateur'] as Map).cast<String, dynamic>(), memoriser: _memoriser);
     } on ErreurApi catch (e) {
       setState(() => _erreur = e.message);
     } finally {
@@ -56,74 +60,153 @@ class _EcranConnexionState extends State<EcranConnexion> {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return MotifFond(
-      child: Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Card(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Marque(),
-                        const SizedBox(height: 14),
-                        Text('RÉPUBLIQUE DU CAMEROUN · MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES',
-                            style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, fontWeight: FontWeight.w600, color: c.encre3)),
-                        Text('SANGMÉLIMA · DJA-ET-LOBO · SUD', style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, color: c.encre3)),
-                      ]),
-                    ),
-                    const Divider(),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: AutofillGroup(
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                          const Text('Connexion', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                          Text('Avec votre téléphone ou votre adresse électronique.', style: TextStyle(color: c.encre2)),
-                          const SizedBox(height: 16),
-                          if (_erreur != null) ...[MessageErreur(_erreur!), const SizedBox(height: 12)],
-                          TextField(
-                            controller: _id,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [AutofillHints.username],
-                            decoration: const InputDecoration(labelText: 'Téléphone ou e-mail'),
-                            textInputAction: TextInputAction.next,
+    final sombre = Theme.of(context).brightness == Brightness.dark;
+    final petit = TextStyle(fontSize: 10.5, height: 1.35, color: c.encre2);
+    final gras = petit.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.4, color: Theme.of(context).colorScheme.onSurface);
+
+    // Pleine page, sans carte : bandes sur toute la largeur, puis le formulaire sur le motif.
+    return Scaffold(
+      body: SafeArea(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          SizedBox(
+            height: 12,
+            child: Row(children: [
+              Expanded(child: ColoredBox(color: _drapeau[0])),
+              Expanded(
+                child: ColoredBox(color: _drapeau[1], child: Center(child: Icon(Icons.star, size: 10, color: _drapeau[2]))),
+              ),
+              Expanded(child: ColoredBox(color: _drapeau[2])),
+            ]),
+          ),
+          // En-tête officiel bilingue : français à gauche, anglais à droite.
+          Container(
+            decoration: BoxDecoration(color: c.surface2, border: Border(bottom: BorderSide(color: c.bord))),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Row(children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('RÉPUBLIQUE DU CAMEROUN', style: gras),
+                  Text('Paix – Travail – Patrie', style: petit.copyWith(fontStyle: FontStyle.italic)),
+                  Text('MINESEC · DRES-Sud', style: petit),
+                  Text('DDES Dja-et-Lobo', style: petit),
+                ]),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Image.asset('assets/logo.png', width: 64, height: 64),
+              ),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('REPUBLIC OF CAMEROON', style: gras, textAlign: TextAlign.right),
+                  Text('Peace – Work – Fatherland', style: petit.copyWith(fontStyle: FontStyle.italic), textAlign: TextAlign.right),
+                  Text('MINSEC · South RDSE', style: petit, textAlign: TextAlign.right),
+                  Text('Dja and Lobo DDSE', style: petit, textAlign: TextAlign.right),
+                ]),
+              ),
+            ]),
+          ),
+          // Établissement, avec le choix du thème.
+          Container(
+            decoration: BoxDecoration(border: Border(bottom: BorderSide(color: c.bord))),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Stack(clipBehavior: Clip.none, children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                const Text('CETIC DE MEZESSE',
+                    textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                Text("Collège d'Enseignement Technique Industriel et Commercial",
+                    textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: c.encre2)),
+                const SizedBox(height: 2),
+                Text('Gestion scolaire et pédagogique',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+              ]),
+              Positioned(
+                right: -8,
+                top: -8,
+                child: IconButton(
+                  tooltip: sombre ? 'Passer en mode clair' : 'Passer en mode sombre',
+                  icon: Icon(sombre ? Icons.light_mode_outlined : Icons.dark_mode_outlined, size: 20),
+                  onPressed: () => Etat.i.basculerTheme(Theme.of(context).brightness),
+                ),
+              ),
+            ]),
+          ),
+          // Formulaire, directement sur le motif.
+          Expanded(
+            child: MotifFond(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: AutofillGroup(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        const Text('Connexion', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text('Espace réservé aux enseignants et au personnel administratif.', style: TextStyle(color: c.encre2)),
+                        const SizedBox(height: 20),
+                        if (_erreur != null) ...[MessageErreur(_erreur!), const SizedBox(height: 14)],
+                        TextField(
+                          controller: _id,
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.username],
+                          textInputAction: TextInputAction.next,
+                          decoration: const InputDecoration(
+                            labelText: 'Téléphone ou e-mail',
+                            hintText: 'Ex. : 677 00 00 00',
+                            helperText: "Le numéro ou l'adresse enregistré par le Surveillant Général.",
+                            helperMaxLines: 2,
                           ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _mdp,
-                            obscureText: !_voir,
-                            autofillHints: const [AutofillHints.password],
-                            onSubmitted: (_) => _connecter(),
-                            decoration: InputDecoration(
-                              labelText: 'Mot de passe',
-                              suffixIcon: IconButton(
-                                icon: Icon(_voir ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                                onPressed: () => setState(() => _voir = !_voir),
-                              ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _mdp,
+                          obscureText: !_voir,
+                          autofillHints: const [AutofillHints.password],
+                          onSubmitted: (_) => _connecter(),
+                          decoration: InputDecoration(
+                            labelText: 'Mot de passe',
+                            hintText: 'Votre mot de passe',
+                            suffixIcon: IconButton(
+                              tooltip: _voir ? 'Masquer le mot de passe' : 'Afficher le mot de passe',
+                              icon: Icon(_voir ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                              onPressed: () => setState(() => _voir = !_voir),
                             ),
                           ),
-                          const SizedBox(height: 18),
-                          FilledButton(
-                            onPressed: _envoi ? null : _connecter,
-                            child: _envoi
-                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('Se connecter'),
+                        ),
+                        const SizedBox(height: 6),
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                          value: _memoriser,
+                          title: const Text('Rester connecté sur cet appareil'),
+                          onChanged: (v) => setState(() => _memoriser = v ?? true),
+                        ),
+                        const SizedBox(height: 8),
+                        FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                            backgroundColor: sombre ? null : const Color(0xFF16324F),
                           ),
-                          const SizedBox(height: 12),
-                          Text('Mot de passe oublié ? Adressez-vous au Surveillant Général.', style: TextStyle(fontSize: 12, color: c.encre3)),
-                        ]),
-                      ),
+                          onPressed: _envoi ? null : _connecter,
+                          child: _envoi
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text('Se connecter'),
+                        ),
+                        const SizedBox(height: 20),
+                        Divider(color: c.bord),
+                        const SizedBox(height: 8),
+                        Text('Mot de passe oublié ? Adressez-vous au Surveillant Général.',
+                            textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: c.encre2)),
+                      ]),
                     ),
-                  ]),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ]),
       ),
     );
   }

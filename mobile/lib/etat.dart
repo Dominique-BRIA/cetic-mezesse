@@ -72,9 +72,14 @@ class Etat extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> connecter(String jeton, Map<String, dynamic> u) async {
+  /// Sans « rester connecté », le jeton n'est gardé qu'en mémoire : fermer l'application déconnecte.
+  Future<void> connecter(String jeton, Map<String, dynamic> u, {bool memoriser = true}) async {
     Api.i.jeton = jeton;
-    await Api.i.prefs.setString('jeton', jeton);
+    if (memoriser) {
+      await Api.i.prefs.setString('jeton', jeton);
+    } else {
+      await Api.i.prefs.remove('jeton');
+    }
     utilisateur = u;
     await chargerAnnees();
     notifyListeners();

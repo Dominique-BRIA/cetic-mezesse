@@ -85,7 +85,7 @@ eleves.get('/modele-import', roles('SURVEILLANT_GENERAL'), async (_req, res) => 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Élèves');
   ws.columns = COLONNES_IMPORT.map((c) => ({ header: c, key: c, width: 22 }));
-  ws.addRow(['MBALLA', 'Jean Pierre', 'M', '14/03/2011', 'Sangmélima', 'Non', '', 'MBALLA Paul', '699000000', 'Mezessé']);
+  ws.addRow(['MBALLA', 'Jean Pierre', 'M', '14/03/2011', 'Sangmélima', 'Non', '', 'MBALLA Paul', '699000000', 'Mezesse']);
   ws.getRow(1).font = { bold: true };
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', 'attachment; filename="modele-import-eleves.xlsx"');

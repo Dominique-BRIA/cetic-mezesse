@@ -25,7 +25,7 @@ class Api {
 
   static const base = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'https://cetic-mezesse-api.azurewebsites.net/api',
+    defaultValue: 'https://cetic-mezesse-api-dgfxfucegjg8gscb.francecentral-01.azurewebsites.net/api',
   );
 
   String? jeton;

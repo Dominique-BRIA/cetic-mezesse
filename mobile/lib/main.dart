@@ -28,7 +28,7 @@ class Application extends StatelessWidget {
     return ListenableBuilder(
       listenable: Etat.i,
       builder: (context, _) => MaterialApp(
-        title: 'CETIC de Mezessé',
+        title: 'CETIC de Mezesse',
         debugShowCheckedModeBanner: false,
         theme: construireTheme(Brightness.light),
         darkTheme: construireTheme(Brightness.dark),
