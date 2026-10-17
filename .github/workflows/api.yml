@@ -1,8 +1,9 @@
 name: API Azure
 
 # Redéploie l'API sur Azure App Service à chaque push qui touche api/.
-# Azure installe les dépendances et compile (SCM_DO_BUILD_DURING_DEPLOYMENT=true) ;
-# la commande de démarrage applique les migrations avant de lancer le serveur.
+# L'API est compilée ici puis envoyée prête à lancer : Azure ne compile plus
+# (SCM_DO_BUILD_DURING_DEPLOYMENT=false), son « npm install » prenait plus de 40 minutes.
+# La commande de démarrage d'Azure est « npm run demarrage » : migrations, puis serveur.
 on:
   push:
     branches: [main]
@@ -38,12 +39,22 @@ jobs:
     environment:
       name: production
       url: ${{ vars.API_URL }}
+    defaults:
+      run:
+        working-directory: api
     steps:
       - uses: actions/checkout@v4
-      # Seulement les sources : Azure fait npm install et npm run build.
-      - name: Archive de l'API
-        working-directory: api
-        run: zip -qr ../api.zip package.json package-lock.json tsconfig.json src prisma
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      # Même système qu'Azure (Linux, OpenSSL 3) : le moteur Prisma compilé ici y fonctionne.
+      - run: npm ci
+      - run: npm run build
+      - run: npm prune --omit=dev
+      - name: Archive prête à lancer
+        run: zip -qr ../api.zip package.json dist node_modules prisma && ls -lh ../api.zip
       - uses: azure/webapps-deploy@v3
         with:
           app-name: cetic-mezesse-api
@@ -54,7 +65,7 @@ jobs:
           API_URL: ${{ vars.API_URL }}
         run: |
           for i in $(seq 1 30); do
-            if curl -fsS "$API_URL/sante" | grep -q '"ok"'; then echo "API en ligne"; exit 0; fi
+            if curl -fsS -m 60 "$API_URL/sante" | grep -q '"ok"'; then echo "API en ligne"; exit 0; fi
             sleep 20
           done
           echo "::error::L'API ne répond pas sur $API_URL/sante"
