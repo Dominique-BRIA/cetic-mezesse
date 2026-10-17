@@ -58,14 +58,18 @@ final destinations = <Destination>[
 /// Permet aux écrans d'en ouvrir un autre (par exemple le tableau de bord vers la saisie).
 final ValueNotifier<String> destinationCourante = ValueNotifier('accueil');
 
+/// Incrémenté par le bouton « Actualiser » : l'écran affiché est reconstruit et recharge ses données.
+final ValueNotifier<int> versionEcran = ValueNotifier(0);
+
 class Coquille extends StatelessWidget {
   const Coquille({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<String>(
-      valueListenable: destinationCourante,
-      builder: (context, cle, _) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([destinationCourante, versionEcran]),
+      builder: (context, _) {
+        final cle = destinationCourante.value;
         final e = Etat.i;
         final visibles = destinations.where((d) => d.roles.contains(e.role)).toList();
         final d = visibles.firstWhere((x) => x.cle == cle, orElse: () => visibles.first);
@@ -74,6 +78,11 @@ class Coquille extends StatelessWidget {
             appBar: AppBar(
               title: Text(d.libelle),
               actions: [
+                IconButton(
+                  tooltip: 'Actualiser',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: () => versionEcran.value++,
+                ),
                 ClocheNotifications(
                   ouvrir: (cle) {
                     if (visibles.any((x) => x.cle == cle)) destinationCourante.value = cle;
@@ -105,7 +114,7 @@ class Coquille extends StatelessWidget {
                   : null,
             ),
             drawer: _Tiroir(visibles: visibles, courante: d.cle),
-            body: KeyedSubtree(key: ValueKey('${d.cle}-${Api.i.anneeId}'), child: d.ecran()),
+            body: KeyedSubtree(key: ValueKey('${d.cle}-${Api.i.anneeId}-${versionEcran.value}'), child: d.ecran()),
           ),
         );
       },

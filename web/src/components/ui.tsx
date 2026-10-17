@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import clsx from 'clsx';
-import { AlertCircle, Eye, EyeOff, Loader2, X } from 'lucide-react';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, Eye, EyeOff, Loader2, RefreshCw, X } from 'lucide-react';
 import { ErreurApi } from '../lib/api';
 import { PERIODES } from '../lib/format';
 import type { CodePeriode } from '../lib/types';
@@ -26,10 +27,31 @@ export function Page({
           <h1 className="text-[1.4rem] font-bold leading-tight tracking-tight text-encre">{titre}</h1>
           {description && <p className="mt-1 max-w-3xl text-sm text-encre-2">{description}</p>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        <div className="flex flex-wrap items-center gap-2">
+          {actions}
+          <Actualiser />
+        </div>
       </header>
       {children}
     </div>
+  );
+}
+
+// Recharge les données affichées par la page, sans recharger tout le site.
+function Actualiser() {
+  const client = useQueryClient();
+  const enCours = useIsFetching() > 0;
+  return (
+    <button
+      type="button"
+      className="bouton-secondaire"
+      onClick={() => client.refetchQueries({ type: 'active' })}
+      disabled={enCours}
+      title="Recharger les données de la page"
+    >
+      <RefreshCw className={clsx('h-4 w-4', enCours && 'animate-spin')} />
+      <span className="hidden sm:inline">Actualiser</span>
+    </button>
   );
 }
 

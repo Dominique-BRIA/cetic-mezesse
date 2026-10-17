@@ -12,7 +12,8 @@ import { FournisseurApp } from './lib/contexte';
 import { App } from './App';
 
 const client = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
+  // Données reprises au retour sur l'onglet ; le bouton « Actualiser » de chaque page force le rechargement.
+  defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true } },
 });
 
 createRoot(document.getElementById('root')!).render(
