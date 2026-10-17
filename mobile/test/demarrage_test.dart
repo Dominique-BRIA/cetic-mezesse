@@ -74,6 +74,25 @@ void main() {
     expect(find.byType(EcranConnexion), findsOneWidget);
   });
 
+  // Sur téléphone, la lecture des réglages prend du temps : l'interface est affichée (cercle)
+  // avant la fin du démarrage. L'écran doit alors passer à la connexion, puis à l'accueil.
+  testWidgets('démarrage fini après l’affichage : l’écran suit, puis la connexion ouvre l’accueil', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    Etat.i
+      ..utilisateur = null
+      ..annees = []
+      ..demarrage = true;
+    await t.pumpWidget(const Application());
+    await t.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await t.runAsync(() => Etat.i.demarrer().timeout(const Duration(seconds: 5)));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(find.byType(EcranConnexion), findsOneWidget);
+    await t.runAsync(() => Etat.i.connecter('j', Map<String, dynamic>.from(profil)));
+    await t.pump(const Duration(milliseconds: 100));
+    expect(find.byType(Coquille), findsOneWidget);
+  });
+
   testWidgets('pas de cercle de chargement après le démarrage', (t) async {
     await demarrer(t, {'jeton': 'j', 'profil': jsonEncode(profil)});
     expect(find.byWidgetPredicate((w) => w is Scaffold && w.appBar == null && w.body is Center), findsNothing);

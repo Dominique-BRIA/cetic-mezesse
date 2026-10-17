@@ -54,15 +54,22 @@ class Application extends StatelessWidget {
 class Accueil extends StatelessWidget {
   const Accueil({super.key});
 
+  // Cet écran est construit une seule fois par le Navigator (home: const Accueil()) : il doit
+  // écouter l'état lui-même, sinon la fin du démarrage ou la connexion ne le redessinent pas.
   @override
   Widget build(BuildContext context) {
-    final e = Etat.i;
-    noter('écran : ${e.demarrage ? 'chargement' : e.utilisateur == null ? 'connexion' : 'accueil (${e.role})'}');
-    if (e.demarrage) {
-      return const MotifFond(child: Scaffold(body: Center(child: CircularProgressIndicator(strokeWidth: 2.5))));
-    }
-    if (e.utilisateur == null) return const EcranConnexion();
-    if (e.utilisateur!['doitChangerMotDePasse'] == true) return const EcranMotDePasse(obligatoire: true);
-    return ValueListenableBuilder(valueListenable: Api.i.horsLigne, builder: (_, __, ___) => const Coquille());
+    return ListenableBuilder(
+      listenable: Etat.i,
+      builder: (context, _) {
+        final e = Etat.i;
+        noter('écran : ${e.demarrage ? 'chargement' : e.utilisateur == null ? 'connexion' : 'accueil (${e.role})'}');
+        if (e.demarrage) {
+          return const MotifFond(child: Scaffold(body: Center(child: CircularProgressIndicator(strokeWidth: 2.5))));
+        }
+        if (e.utilisateur == null) return const EcranConnexion();
+        if (e.utilisateur!['doitChangerMotDePasse'] == true) return const EcranMotDePasse(obligatoire: true);
+        return ValueListenableBuilder(valueListenable: Api.i.horsLigne, builder: (_, _, _) => const Coquille());
+      },
+    );
   }
 }
