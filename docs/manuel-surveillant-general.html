@@ -130,13 +130,19 @@
   <figure><img src="img/manuel/sg-eleves.png" alt=""><figcaption>Figure 13 — Les élèves</figcaption></figure>
   <h3>Inscrire des élèves</h3>
   <ul>
-    <li><b>Nouvel élève</b> : identité, date et lieu de naissance, parent, classe, redoublant. Le matricule scolaire est généré automatiquement ; le matricule national (cartescolaire.cm) est facultatif.</li>
-    <li><b>Importer</b> : téléchargez le modèle Excel, remplissez une ligne par élève, puis envoyez le fichier pour une classe. L'import est « tout ou rien » : une ligne invalide, et rien n'est enregistré ; la liste des erreurs indique quoi corriger.</li>
+    <li><b>Ajouter des élèves</b> : choisissez la classe, puis remplissez une ligne par élève (nom, prénoms, sexe, date et lieu de naissance, redoublant, parent et son téléphone). La <b>photo</b> est facultative : cliquez la case Photo de la ligne. Une nouvelle ligne s'ajoute dès que vous remplissez la dernière ; les lignes vides sont ignorées. Un seul clic sur <b>Enregistrer</b> inscrit tout le monde.</li>
+    <li><b>Importer</b> : téléchargez le modèle Excel, remplissez une ligne par élève, puis envoyez le fichier pour une classe.</li>
   </ul>
-  <figure><img src="img/manuel/sg-import.png" alt=""><figcaption>Figure 14 — Import d'élèves depuis Excel</figcaption></figure>
+  <figure><img src="img/manuel/sg-ajout-eleves.png" alt=""><figcaption>Figure 14 — Ajouter plusieurs élèves d'un coup, avec leur photo</figcaption></figure>
+  <div class="encadre attention"><b>Tout ou rien.</b> Dans les deux cas, si une ligne est incomplète, rien n'est enregistré : les champs manquants sont entourés en rouge (ou la liste des erreurs indique quoi corriger dans le fichier). Le matricule scolaire est attribué à l'enregistrement ; le matricule national et l'adresse du parent se complètent ensuite sur la fiche.</div>
+  <figure><img src="img/manuel/sg-import.png" alt=""><figcaption>Figure 15 — Import d'élèves depuis Excel</figcaption></figure>
+  <h3>Les photos de plusieurs élèves</h3>
+  <p>Le bouton <b>Photos</b> montre les élèves d'une classe en vignettes. Cliquez un élève pour choisir sa photo, ou cliquez <b>Choisir plusieurs photos</b> : chaque fichier nommé avec le matricule de l'élève (par exemple <code>CTM26-0047.jpg</code>) est rangé chez lui. Vous pouvez aussi déposer les fichiers sur la fenêtre. « Seulement les élèves sans photo » n'affiche que ceux à qui il en manque une. Un seul <b>Enregistrer</b> envoie toutes les photos.</p>
+  <figure><img src="img/manuel/sg-photos.png" alt=""><figcaption>Figure 16 — Photos de plusieurs élèves</figcaption></figure>
+  <p>Les photos sont réduites avant l'envoi : une photo de téléphone de plusieurs Mo pèse alors une centaine de Ko. Sur le téléphone, chaque photo se prend directement avec l'appareil.</p>
   <h3>La fiche de l'élève</h3>
   <p>Elle regroupe l'identité, la photo, le parcours dans l'établissement et les documents : <b>Générer le bulletin</b> pour la période choisie, et <b>Carte scolaire</b>, disponible dès que l'élève a une photo. <b>Modifier</b> corrige la fiche ; un élève qui a déjà des notes ne change plus de classe dans l'année.</p>
-  <figure><img src="img/manuel/sg-fiche-eleve.png" alt=""><figcaption>Figure 15 — Fiche de l'élève</figcaption></figure>
+  <figure><img src="img/manuel/sg-fiche-eleve.png" alt=""><figcaption>Figure 17 — Fiche de l'élève</figcaption></figure>
 </section>
 
 <section class="chapitre">
@@ -145,13 +151,13 @@
   <div class="etape"><div class="num">1</div><div>Créez la nouvelle année et ses classes (chapitre 4), puis choisissez-la en haut du menu.</div></div>
   <div class="etape"><div class="num">2</div><div><b>Élèves à réinscrire</b> : choisissez l'année et la classe d'origine, puis cochez les élèves. Seuls ceux qui ne sont pas encore inscrits dans la nouvelle année sont proposés.</div></div>
   <div class="etape"><div class="num">3</div><div><b>Classe d'accueil</b> dans la nouvelle année ; cochez « Inscrire comme redoublants » si besoin, puis <b>Réinscrire</b>.</div></div>
-  <figure><img src="img/manuel/sg-reinscription.png" alt=""><figcaption>Figure 16 — Réinscriptions : avec une seule année, la page invite à créer la suivante</figcaption></figure>
+  <figure><img src="img/manuel/sg-reinscription.png" alt=""><figcaption>Figure 18 — Réinscriptions : avec une seule année, la page invite à créer la suivante</figcaption></figure>
 </section>
 
 <section class="chapitre">
   <h2>11. Notes</h2>
   <p>Menu Évaluations → <b>Notes</b>. Pour une classe et une période : le relevé des notes, les moyennes et les rangs, avec <b>Exporter en Excel</b>. L'onglet <b>Notes manquantes</b> liste, matière par matière, les élèves sans note et leur professeur : utile avant de fermer une séquence.</p>
-  <figure><img src="img/manuel/sg-notes.png" alt=""><figcaption>Figure 17 — Relevé des notes d'une classe</figcaption></figure>
+  <figure><img src="img/manuel/sg-notes.png" alt=""><figcaption>Figure 19 — Relevé des notes d'une classe</figcaption></figure>
   <div class="encadre">Les notes en rouge sont sous la moyenne. Une note de trimestre est la moyenne des séquences évaluées du trimestre ; la note annuelle, la moyenne des trimestres évalués. Les moyennes sont pondérées par les coefficients.</div>
 </section>
 
@@ -159,18 +165,18 @@
   <h2>12. Bulletins et cartes scolaires</h2>
   <h3>Bulletins</h3>
   <p>Menu Évaluations → <b>Bulletins</b>. Choisissez la période, puis des <b>classes entières</b> ou des <b>élèves choisis</b>. Un seul PDF est produit, une page A4 bilingue par élève, prête à imprimer.</p>
-  <figure><img src="img/manuel/sg-bulletins.png" alt=""><figcaption>Figure 18 — Bulletins de notes</figcaption></figure>
+  <figure><img src="img/manuel/sg-bulletins.png" alt=""><figcaption>Figure 20 — Bulletins de notes</figcaption></figure>
   <h3>Cartes scolaires</h3>
   <p>Menu Scolarité → <b>Cartes scolaires</b>. Même choix des classes ou des élèves. Les cartes sont au format carte bancaire (85,6 × 54 mm), dix par page A4, avec des traits de coupe pour les découper à la main.</p>
-  <figure><img src="img/manuel/sg-cartes.png" alt=""><figcaption>Figure 19 — Cartes scolaires : vérification des photos</figcaption></figure>
-  <div class="encadre attention"><b>La photo est obligatoire.</b> Dès que vous choisissez des élèves, l'application vérifie leurs photos et liste ceux qui n'en ont pas, avec un lien vers leur fiche. Leur carte n'est pas imprimée tant que la photo manque.</div>
+  <figure><img src="img/manuel/sg-cartes.png" alt=""><figcaption>Figure 21 — Cartes scolaires : vérification des photos</figcaption></figure>
+  <div class="encadre attention"><b>La photo est obligatoire.</b> Dès que vous choisissez des élèves, l'application vérifie leurs photos et liste ceux qui n'en ont pas. Le bouton <b>Ajouter les photos manquantes</b> ouvre directement la fenêtre des photos sur ces élèves. Leur carte n'est pas imprimée tant que la photo manque.</div>
 </section>
 
 <section class="chapitre">
   <h2>13. Statistiques et classement</h2>
   <p>Menu Évaluations → <b>Statistiques</b>, pour une période et sur trois onglets : <b>Établissement</b>, <b>Par classe</b>, <b>Par matière</b>. On y trouve la moyenne générale, le taux de réussite, les moyennes extrêmes, l'écart-type, le premier et le dernier élève, la meilleure et la dernière classe, la répartition des moyennes et la comparaison filles–garçons. <b>Classement général</b> : tous les élèves de l'établissement rangés ensemble.</p>
-  <figure><img src="img/manuel/sg-statistiques.png" alt=""><figcaption>Figure 20 — Statistiques de l'établissement</figcaption></figure>
-  <figure><img src="img/manuel/sg-classement.png" alt=""><figcaption>Figure 21 — Classement général</figcaption></figure>
+  <figure><img src="img/manuel/sg-statistiques.png" alt=""><figcaption>Figure 22 — Statistiques de l'établissement</figcaption></figure>
+  <figure><img src="img/manuel/sg-classement.png" alt=""><figcaption>Figure 23 — Classement général</figcaption></figure>
   <div class="encadre">Les rangs se calculent sur les moyennes arrondies au centième ; des élèves ex æquo partagent le rang et le suivant est sauté. Un élève réussit avec une moyenne de 10 ou plus. Un élève renvoyé sort des listes, des calculs et des classements.</div>
 </section>
 
@@ -194,7 +200,7 @@
     <tr><td>Je ne trouve pas le groupe dans « Nouvelle matière ».</td><td>Le groupe n'est pas rattaché à cette classe. Ajoutez la classe dans la page Groupes de matières.</td></tr>
     <tr><td>Un professeur ne voit pas sa matière.</td><td>La matière n'a pas de professeur attribué, ou c'est un autre compte. Vérifiez dans Matières.</td></tr>
     <tr><td>Les professeurs ne peuvent pas saisir.</td><td>La séquence n'est pas ouverte (Années et séquences).</td></tr>
-    <tr><td>Un élève n'a pas de carte scolaire.</td><td>Il n'a pas de photo. Ajoutez-la depuis sa fiche.</td></tr>
+    <tr><td>Un élève n'a pas de carte scolaire.</td><td>Il n'a pas de photo. Ajoutez-la avec le bouton Photos de la page Élèves, ou depuis sa fiche.</td></tr>
     <tr><td>Une action que j'ai faite a été annulée.</td><td>Le Proviseur l'a désapprouvée : la notification en donne le motif.</td></tr>
     <tr><td>La page ne montre pas les dernières données.</td><td>Cliquez <b>Actualiser</b> en haut à droite de la page.</td></tr>
   </table>
